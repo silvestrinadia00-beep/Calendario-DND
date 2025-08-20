@@ -1,40 +1,68 @@
 <!DOCTYPE html>
 <html lang="it">
-<head> <link rel="manifest" href="./manifest.webmanifest" />
-<meta name="theme-color" content="#4f46e5" />
-<link rel="icon" href="./icon-192.png" sizes="192x192" />
-<link rel="apple-touch-icon" href="./icon-192.png" />
-<meta charset="utf-8"/>
-<meta name="viewport" content="width=device-width, initial-scale=1"/>
-<title>Calendario disponibilità DnD – Nadia</title>
-<style>
-  :root{ --bg:#f8fafc; --fg:#0f172a; --muted:#64748b; --card:#ffffff; --accent:#4f46e5; --border:#e5e7eb; --ring:#818cf8; }
-  *{box-sizing:border-box} body{margin:0;background:var(--bg);color:var(--fg);font-family:system-ui,Segoe UI,Roboto,Ubuntu,Cantarell,Noto Sans,sans-serif}
-  .container{max-width:1000px;margin:0 auto;padding:16px 20px}
-  h1{font-size:clamp(22px,3vw,28px);margin:0 0 6px 0}
-  .sub{color:var(--muted);font-size:14px;margin:0 0 12px 0}
-  .row{display:grid;grid-template-columns:1.6fr .9fr;gap:16px} @media (max-width:900px){.row{grid-template-columns:1fr}}
-  .card{background:var(--card);border-radius:16px;box-shadow:0 2px 10px rgba(0,0,0,.05);padding:12px;border:1px solid var(--border)}
-  .stack{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
-  .btn{border:1px solid var(--border);border-radius:14px;padding:8px 12px;background:#fff;box-shadow:0 1px 3px rgba(0,0,0,.04);cursor:pointer}
-  .btn.primary{background:var(--accent);border-color:transparent;color:#fff}
-  .select, .input, .number{border:1px solid var(--border);border-radius:12px;padding:8px 10px;background:#fff;outline:none}
-  .weeknames{display:grid;grid-template-columns:repeat(7,1fr);text-align:center;color:var(--muted);font-weight:600;padding:4px 0}
-  .grid{display:grid;grid-template-columns:repeat(7,1fr);gap:6px}
-  .cell{aspect-ratio:1/1;background:#fff;border-radius:12px;padding:6px;text-align:left;position:relative;border:1px solid var(--border);cursor:pointer;transition:box-shadow .15s}
-  .cell:hover{box-shadow:0 2px 10px rgba(0,0,0,.08)}
-  .cell .top{display:flex;align-items:center;justify-content:space-between;font-weight:600}
-  .badge{font-size:10px;background:#fff;border-radius:999px;padding:2px 6px;border:1px solid var(--border)}
-  .names{margin-top:4px;font-size:10px;color:#334155;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden}
-  .today{outline:2px solid var(--ring)}
-  .pill{display:inline-flex;align-items:center;gap:6px;border:1px solid var(--border);border-radius:999px;padding:4px 8px;font-size:12px}
-  .ok{color:#065f46;background:#ecfdf5;border-color:#a7f3d0}
-  .warn{color:#92400e;background:#fffbeb;border-color:#fcd34d}
-  .err{color:#991b1b;background:#fee2e2;border-color:#fecaca}
-  .muted{color:var(--muted);font-size:12px}
-</style>
+<head>
+  <!-- PWA -->
+  <link rel="manifest" href="./manifest.webmanifest" />
+  <meta name="theme-color" content="#4f46e5" />
+  <link rel="icon" href="./icon-192.png" sizes="192x192" />
+  <link rel="apple-touch-icon" href="./icon-192.png" />
+
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta name="format-detection" content="telephone=no">
+
+  <title>Calendario disponibilità DnD – Nadia</title>
+
+  <style>
+    :root{ --bg:#f8fafc; --fg:#0f172a; --muted:#64748b; --card:#ffffff; --accent:#4f46e5; --border:#e5e7eb; --ring:#818cf8; }
+    *{box-sizing:border-box}
+    html{ -webkit-text-size-adjust:100%; }
+    body{margin:0;background:var(--bg);color:var(--fg);font-family:system-ui,Segoe UI,Roboto,Ubuntu,Cantarell,Noto Sans,sans-serif; min-height:100dvh; padding-left:env(safe-area-inset-left); padding-right:env(safe-area-inset-right);}
+    *{ -webkit-tap-highlight-color: transparent; }
+
+    .container{max-width:1000px;margin:0 auto;padding:16px 20px}
+    h1{font-size:clamp(22px,3vw,28px);margin:0 0 6px 0}
+    .sub{color:var(--muted);font-size:14px;margin:0 0 12px 0}
+    .row{display:grid;grid-template-columns:1.6fr .9fr;gap:16px}
+    @media (max-width:900px){.row{grid-template-columns:1fr}}
+
+    .card{background:var(--card);border-radius:16px;box-shadow:0 2px 10px rgba(0,0,0,.05);padding:14px;border:1px solid var(--border)}
+    .stack{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+    .btn{border:1px solid var(--border);border-radius:14px;padding:8px 12px;background:#fff;box-shadow:0 1px 3px rgba(0,0,0,.04);cursor:pointer; line-height:1}
+    .btn.primary{background:var(--accent);border-color:transparent;color:#fff}
+    .btn.small{padding:8px 10px}
+    .select, .input, .number{border:1px solid var(--border);border-radius:12px;padding:8px 10px;background:#fff;outline:none; min-height:40px}
+    .input{min-width:180px}
+    @media (max-width:520px){ .input, .number, .select{ min-width:140px; flex:1 1 140px; } }
+    input, select, textarea, button { font-size:16px; } /* evita zoom iOS */
+
+    .weeknames{display:grid;grid-template-columns:repeat(7,1fr);text-align:center;color:var(--muted);font-weight:600;padding:4px 0}
+    .grid{display:grid;grid-template-columns:repeat(7,1fr);gap:6px}
+    .cell{aspect-ratio:1/1;background:#fff;border-radius:12px;padding:6px;text-align:left;position:relative;border:1px solid var(--border);cursor:pointer;transition:box-shadow .15s}
+    .cell:hover{box-shadow:0 2px 10px rgba(0,0,0,.08)}
+    .cell .top{display:flex;align-items:center;justify-content:space-between;font-weight:600}
+    .badge{font-size:10px;background:#fff;border-radius:999px;padding:2px 6px;border:1px solid var(--border); line-height:1; display:inline-flex; align-items:center}
+    .today{outline:2px solid var(--ring)}
+
+    /* Nomi come "badge" ordinati */
+    .names{ display:flex; flex-wrap:wrap; gap:4px; margin-top:4px; word-break:break-word; }
+    .names .tag{ display:inline-block; background:#e2e8f0; padding:2px 6px; border-radius:6px; font-size:12px; line-height:1.2; color:#1e293b; }
+
+    /* Colorazione per conteggio */
+    .cell.full7{ background:#bbf7d0 !important; }   /* 7+ nomi = verde */
+    .cell.almost6{ background:#eaffad !important; } /* 6 nomi = giallo verdastro */
+
+    .pill{display:inline-flex;align-items:center;gap:6px;border:1px solid var(--border);border-radius:999px;padding:4px 8px;font-size:12px}
+    .ok{color:#065f46;background:#ecfdf5;border-color:#a7f3d0}
+    .warn{color:#92400e;background:#fffbeb;border-color:#fcd34d}
+    .err{color:#991b1b;background:#fee2e2;border-color:#fecaca}
+    .muted{color:var(--muted);font-size:12px}
+  </style>
 </head>
-<body><script>
+<body>
+<script>
   if ('serviceWorker' in navigator) {
     window.addEventListener('load', () => {
       navigator.serviceWorker.register('./sw.js');
@@ -52,19 +80,18 @@
     <div class="stack" style="justify-content:space-between">
       <div class="stack">
         <label>Stanza</label>
-        <input id="room" class="input" placeholder="es. party-roma" style="min-width:180px">
+        <input id="room" class="input" placeholder="es. dnd">
         <label>Nome</label>
-        <input id="name" class="input" placeholder="il tuo nome" style="min-width:160px">
+        <input id="name" class="input" placeholder="il tuo nome">
         <button id="connect" class="btn primary">Connetti</button>
-        <button id="copyLink" class="btn">Copia link stanza</button>
+        <button id="copyLink" class="btn small">Copia link stanza</button>
       </div>
       <div class="stack">
         <select id="monthSel" class="select"></select>
         <input id="yearInp" class="number" type="number" style="width:100px">
-        <button id="todayBtn" class="btn">Oggi</button>
+        <button id="todayBtn" class="btn small">Oggi</button>
       </div>
     </div>
-    <p id="hint" class="muted" style="margin-top:8px">Se compare un errore di scrittura: attiva “Authentication → Anonimo” e metti le regole Firestore indicate più sotto.</p>
   </section>
 
   <section class="row">
@@ -77,24 +104,6 @@
     <aside class="card">
       <h3 style="margin:6px 0 8px 0">Partecipanti (mese)</h3>
       <div id="participants" class="muted">–</div>
-      <hr style="border:none;border-top:1px solid var(--border);margin:10px 0">
-      <h3 style="margin:6px 0 8px 0">Se vedi errore di scrittura</h3>
-      <ol class="muted" style="margin-top:6px">
-        <li>Firebase → <b>Authentication</b> → <b>Metodo di accesso</b> → <b>Anonimo</b>: <u>Attivo</u></li>
-        <li>Firebase → <b>Firestore Database</b> → <b>Regole</b> → incolla e Pubblica:<br>
-<pre style="white-space:pre-wrap;background:#f1f5f9;padding:8px;border-radius:8px;border:1px solid #e2e8f0">
-rules_version = '2';
-service cloud.firestore {
-  match /databases/{db}/documents {
-    match /rooms/{room}/days/{day} {
-      allow read: if true;
-      allow write: if request.auth != null;
-    }
-  }
-}
-</pre>
-        </li>
-      </ol>
     </aside>
   </section>
 </div>
@@ -105,7 +114,7 @@ service cloud.firestore {
 <script src="https://www.gstatic.com/firebasejs/10.13.1/firebase-firestore-compat.js"></script>
 <script>
 (function(){
-  // Nadia's Firebase config (embedded)
+  // Firebase config (Nadia)
   const firebaseConfig = {
     apiKey: "AIzaSyCLe8BSPpF3j5MSoi_6lsXL6RFT8vUVFWk",
     authDomain: "calendario-dnd.firebaseapp.com",
@@ -119,7 +128,7 @@ service cloud.firestore {
   const IT_MONTHS = ["Gennaio","Febbraio","Marzo","Aprile","Maggio","Giugno","Luglio","Agosto","Settembre","Ottobre","Novembre","Dicembre"];
   const IT_WEEKDAYS = ["Lun","Mar","Mer","Gio","Ven","Sab","Dom"];
   const pad = n => String(n).padStart(2,'0');
-  const ymd = d => d instanceof Date ? `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}` : d;
+  const ymd = d => `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`;
   const firstDayOfMonth = (y,m) => (new Date(y, m, 1).getDay() + 6) % 7;
   const daysInMonth = (y,m) => new Date(y, m+1, 0).getDate();
   const el = id => document.getElementById(id);
@@ -135,7 +144,7 @@ service cloud.firestore {
   const now = new Date(); monthSel.value = now.getMonth(); yearInp.value = now.getFullYear();
   weeknames.innerHTML = IT_WEEKDAYS.map(w=>`<div style="text-align:center;font-weight:600;color:#64748b">${w}</div>`).join('');
 
-  // Firebase init (embedded config)
+  // Firebase init
   let app = { db:null, auth:null, user:null, unsub:null, monthCache:{}, participants:new Set() };
   try{
     firebase.initializeApp(firebaseConfig);
@@ -157,12 +166,29 @@ service cloud.firestore {
     const dim = daysInMonth(y,m); const startOffset = firstDayOfMonth(y,m);
     const todayKey = ymd(new Date());
     grid.innerHTML='';
-    for (let i=0;i<startOffset;i++){ const d=document.createElement('div'); d.className='cell'; d.style.visibility='hidden'; grid.appendChild(d); }
+    for (let i=0;i<startOffset;i++){
+      const d=document.createElement('div'); d.className='cell'; d.style.visibility='hidden'; grid.appendChild(d);
+    }
     for (let d=1; d<=dim; d++){
       const date = new Date(y,m,d); const key = ymd(date);
-      const cell = document.createElement('div'); cell.className='cell'+(key===todayKey?' today':'');
       const list = (app.monthCache[key] || []), cnt=list.length;
-      cell.innerHTML = `<div class="top"><span>${d}</span>${cnt?`<span class="badge">${cnt}</span>`:''}</div>${cnt?`<div class="names">${list.join(', ')}</div>`:''}`;
+
+      // classi in base al conteggio
+      let statusClass = '';
+      if (cnt >= 7) statusClass = 'full7';
+      else if (cnt === 6) statusClass = 'almost6';
+
+      const cell = document.createElement('div');
+      cell.className = 'cell' + (key===todayKey?' today':'') + (statusClass?(' '+statusClass):'');
+
+      const chips = list.map(n => `<span class="tag">${n}</span>`).join('');
+      cell.innerHTML = `
+        <div class="top">
+          <span>${d}</span>
+          ${cnt?`<span class="badge">${cnt}</span>`:''}
+        </div>
+        ${cnt?`<div class="names">${chips}</div>`:''}
+      `;
       cell.onclick = ()=> toggleDay(key);
       grid.appendChild(cell);
     }
@@ -176,7 +202,11 @@ service cloud.firestore {
     const col = app.db.collection('rooms').doc(roomInp.value.trim()).collection('days');
     app.unsub = col.where('date','>=',start).where('date','<=',end).onSnapshot(snap=>{
       app.monthCache = {}; app.participants = new Set();
-      snap.forEach(doc=>{ const d = doc.data(); const list = Array.isArray(d.available)?d.available:[]; app.monthCache[d.date]=list; list.forEach(n=>app.participants.add(n)); });
+      snap.forEach(doc=>{
+        const d = doc.data();
+        const list = Array.isArray(d.available)?d.available:[];
+        app.monthCache[d.date]=list; list.forEach(n=>app.participants.add(n));
+      });
       partEl.textContent = Array.from(app.participants).sort().join(', ') || '–';
       renderCalendar();
       status('Sincronizzato');
@@ -198,7 +228,7 @@ service cloud.firestore {
       }
     }catch(e){
       status('❌ Errore scrittura: '+e.message);
-      alert('Errore scrittura:\n'+e.message+'\n\nSu Firebase attiva Authentication → Anonimo e metti le Regole mostrate a destra.');
+      alert('Errore scrittura:\n'+e.message+'\n\nControlla Authentication Anonimo e Domini autorizzati.');
     }
   }
 
@@ -221,7 +251,12 @@ service cloud.firestore {
   todayBtn.onclick = ()=>{ const t=new Date(); monthSel.value=t.getMonth(); yearInp.value=t.getFullYear(); renderCalendar(); subscribeMonth(); };
 
   // Restore from hash if present
-  (function readHash(){ const h=new URLSearchParams(location.hash.slice(1)); const r=h.get('room'), n=h.get('name'); if (r) roomInp.value=r; if (n) nameInp.value=n; })();
+  (function readHash(){
+    const h=new URLSearchParams(location.hash.slice(1));
+    const r=h.get('room'), n=h.get('name');
+    if (r) roomInp.value=r; if (n) nameInp.value=n;
+  })();
+
   renderCalendar();
 })();
 </script>
