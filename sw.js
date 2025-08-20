@@ -1,5 +1,5 @@
 // Service Worker per Calendario DnD
-const CACHE_NAME = 'dnd-cal-v10;
+const CACHE_NAME = 'dnd-cal-v11;
 const CORE_ASSETS = [
   './',
   './index.html',
