@@ -18,19 +18,17 @@
       display:flex;flex-direction:column;align-items:center; padding:16px;
     }
 
-    /* ============ Header ============ */
+    /* Header */
     .logo{display:flex;justify-content:center;margin:4px 0 10px}
-    .logo img{max-width:320px;height:auto;display:block}
+    .logo img{max-width:320px;width:100%;height:auto;display:block}
 
     h1{font-size:clamp(22px,3.5vw,28px);margin:6px 0 2px}
     .muted{color:var(--muted)}
 
-    /* ============ Cards & Controls ============ */
+    /* Card & controls */
     .card{background:var(--card);border-radius:16px;padding:12px;
       box-shadow:0 2px 8px rgba(0,0,0,.06);border:1px solid var(--border);
       width:100%;max-width:980px;margin-bottom:12px}
-
-    .row{display:flex;gap:8px;flex-wrap:wrap;align-items:center;justify-content:space-between}
     input,select,button{
       font:inherit;padding:8px 10px;border-radius:12px;border:1px solid var(--border);background:#fff
     }
@@ -40,13 +38,13 @@
     .namebar{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
     .namebar input{min-width:220px;flex:1}
 
-    /* ============ Calendar Grid ============ */
+    /* Calendar grid */
     .toolbar{display:flex;gap:8px;align-items:center;justify-content:center}
     .weeknames{display:grid;grid-template-columns:repeat(7,1fr);text-align:center;
       color:var(--muted);font-weight:600;margin:8px 0 6px}
     .grid{display:grid;grid-template-columns:repeat(7,1fr);gap:6px}
 
-    /* Cella con layout VERTICALE (titolo in alto, nomi in colonna) */
+    /* Vertical day cell */
     .cell{
       background:#fff;border:1px solid var(--border);border-radius:14px;min-height:120px;
       padding:8px;display:flex;flex-direction:column;gap:6px;
@@ -58,27 +56,19 @@
     .cell .daynum{font-weight:800}
     .count{font-size:11px;background:#fff;border:1px solid var(--border);border-radius:999px;padding:2px 6px}
 
-    /* lista nomi in verticale */
     .names{display:flex;flex-direction:column;gap:4px;overflow:auto}
     .tag{display:inline-block;background:var(--chip);border-radius:8px;padding:3px 8px;font-size:13px;color:#1f2937;white-space:nowrap}
 
-    /* Stati */
     .cell.full7{background:var(--green)}
     .cell.almost6{background:var(--yellow)}
     .cell.hasAny{border-color:var(--blue); box-shadow:0 0 0 2px rgba(147,197,253,.3) inset} /* cornice celeste */
 
-    /* Responsiveness: griglia a 3 colonne su mobile, poi 2 molto stretto */
+    /* Responsive */
     @media (max-width:860px){ .cell{min-height:130px} }
-    @media (max-width:700px){
-      .grid{grid-template-columns:repeat(3,1fr)}
-      .cell{min-height:140px}
-    }
-    @media (max-width:460px){
-      .grid{grid-template-columns:repeat(2,1fr)}
-      .cell{min-height:150px}
-    }
+    @media (max-width:700px){ .grid{grid-template-columns:repeat(3,1fr)} .cell{min-height:140px} }
+    @media (max-width:460px){ .grid{grid-template-columns:repeat(2,1fr)} .cell{min-height:150px} }
 
-    /* ============ Popup ============ */
+    /* Popup */
     .popup{position:fixed;inset:0;background:rgba(0,0,0,.5);display:none;align-items:center;justify-content:center;z-index:100}
     .box{background:#fff;border-radius:16px;padding:14px;width:92%;max-width:460px;border:1px solid var(--border)}
     .list{margin:6px 0;max-height:260px;overflow:auto;border:1px solid var(--border);border-radius:10px;background:#f9fafb;padding:8px}
@@ -93,7 +83,7 @@
 <body>
   <!-- LOGO -->
   <div class="logo">
-    <img src="Dungeons-and-Dragons-logo.png" alt="Dungeons & Dragons Logo">
+    <img src="./Dungeons-and-Dragons-logo.png" alt="Dungeons & Dragons Logo" onerror="this.style.display='none'">
   </div>
 
   <h1>Calendario disponibilità D&D</h1>
@@ -108,17 +98,15 @@
     </div>
   </div>
 
-  <!-- Calendario -->
-  <div class="card" id="calendar" style="opacity:.6;pointer-events:none">
-    <div class="row" style="justify-content:center">
-      <div class="toolbar">
-        <button id="prevYear"  class="ghost">«</button>
-        <button id="prevMonth" class="ghost">‹</button>
-        <select id="monthSel"></select>
-        <select id="yearSel"></select>
-        <button id="nextMonth" class="ghost">›</button>
-        <button id="nextYear"  class="ghost">»</button>
-      </div>
+  <!-- Calendario SEMPRE visibile -->
+  <div class="card" id="calendar">
+    <div class="toolbar">
+      <button id="prevYear"  class="ghost">«</button>
+      <button id="prevMonth" class="ghost">‹</button>
+      <select id="monthSel"></select>
+      <select id="yearSel"></select>
+      <button id="nextMonth" class="ghost">›</button>
+      <button id="nextYear"  class="ghost">»</button>
     </div>
 
     <div class="weeknames">
@@ -142,6 +130,7 @@
         <button id="closeBtn"   class="ghost">Chiudi</button>
       </div>
       <div id="popupError" class="err"></div>
+      <div id="needName" class="muted" style="margin-top:6px;display:none">Scrivi e salva il tuo nome per poter confermare/cancellare.</div>
     </div>
   </div>
 
@@ -169,7 +158,6 @@
     const nomeInput = document.getElementById("nome");
     const saveNameBtn = document.getElementById("saveNameBtn");
     const okName = document.getElementById("okName");
-    const calendarCard = document.getElementById("calendar");
     const grid = document.getElementById("grid");
     const monthSel = document.getElementById("monthSel");
     const yearSel  = document.getElementById("yearSel");
@@ -187,6 +175,7 @@
     const removeBtn  = document.getElementById("removeBtn");
     const closeBtn   = document.getElementById("closeBtn");
     const popupError = document.getElementById("popupError");
+    const needName   = document.getElementById("needName");
 
     // ==== State
     const room = "dnd"; // fisso
@@ -204,32 +193,23 @@
     const firstDowMon0 = (y,m) => (new Date(y, m-1, 1).getDay() + 6) % 7; // Mon=0..Sun=6
     const IT_MONTHS = ["Gennaio","Febbraio","Marzo","Aprile","Maggio","Giugno","Luglio","Agosto","Settembre","Ottobre","Novembre","Dicembre"];
 
-    // Fill selectors
+    // Fill selectors (anni fino al 2099)
     function fillSelectors(){
       monthSel.innerHTML = IT_MONTHS.map((n,i)=>`<option value="${i+1}">${n}</option>`).join('');
-      yearSel.innerHTML  = Array.from({length:9},(_,k)=> (currentY-4+k))
-        .map(y=>`<option value="${y}">${y}</option>`).join('');
+      // anni 1970..2099 (così sei a posto)
+      const years = [];
+      for(let y=1970; y<=2099; y++) years.push(`<option value="${y}">${y}</option>`);
+      yearSel.innerHTML = years.join('');
       monthSel.value = String(currentM);
       yearSel.value  = String(currentY);
     }
     fillSelectors();
 
-    // Enable when auth+name ready
-    function maybeEnableCalendar(){
-      if(authed && savedName){
-        calendarCard.style.opacity = "1";
-        calendarCard.style.pointerEvents = "auto";
-      }
-    }
-
-    // Auth anonima
-    onAuthStateChanged(auth, (user)=>{
-      authed = !!user;
-      maybeEnableCalendar();
-    });
+    // Auth anonima (per scrivere)
+    onAuthStateChanged(auth, (user)=>{ authed = !!user; });
     signInAnonymously(auth).catch(e=>alert("Errore auth anonima: " + e.message));
 
-    // Salva nome
+    // Salva nome (abilita i bottoni nel popup)
     saveNameBtn.addEventListener("click", ()=>{
       const n = nomeInput.value.trim();
       if(!n){ alert("Inserisci un nome valido."); return; }
@@ -237,23 +217,23 @@
       nomeInput.disabled = true;
       saveNameBtn.disabled = true;
       okName.style.display = "inline";
-      maybeEnableCalendar();
-      loadMonth(); // forza il primo caricamento
     });
 
-    // Nav mese/anno
+    // Navigazione
     function navMonth(delta){
       let m = Number(monthSel.value), y = Number(yearSel.value);
       m += delta;
       if(m<1){ m=12; y--; }
       if(m>12){ m=1; y++; }
+      if(y<1970) y=1970;
+      if(y>2099) y=2099;
       monthSel.value = m; yearSel.value = y;
       onMonthChange();
     }
     prevMonthBtn.onclick = ()=> navMonth(-1);
     nextMonthBtn.onclick = ()=> navMonth(+1);
-    prevYearBtn.onclick  = ()=> { yearSel.value = Number(yearSel.value)-1; onMonthChange(); };
-    nextYearBtn.onclick  = ()=> { yearSel.value = Number(yearSel.value)+1; onMonthChange(); };
+    prevYearBtn.onclick  = ()=> { yearSel.value = Math.max(1970, Number(yearSel.value)-1); onMonthChange(); };
+    nextYearBtn.onclick  = ()=> { yearSel.value = Math.min(2099, Number(yearSel.value)+1); onMonthChange(); };
     monthSel.onchange = yearSel.onchange = onMonthChange;
 
     function onMonthChange(){
@@ -262,7 +242,7 @@
       loadMonth();
     }
 
-    // Costruisci griglia per mese corrente
+    // Build grid
     function buildGrid(){
       grid.innerHTML = "";
       const offset = firstDowMon0(currentY,currentM);
@@ -285,7 +265,7 @@
       }
     }
 
-    // Rende contenuto celle (count, elenco, colori, cornice celeste)
+    // Render celle
     function renderCells(){
       const days = dim(currentY,currentM);
       for(let d=1; d<=days; d++){
@@ -301,7 +281,6 @@
         countEl.textContent = cnt ? cnt : '';
         const namesEl = cell.querySelector('.names');
         namesEl.innerHTML = '';
-        // mostriamo tutti i nomi, in colonna, con orario
         names.forEach(n=>{
           const t = avail[n]||{};
           const chip = document.createElement('div');
@@ -319,9 +298,8 @@
       }
     }
 
-    // Carica il mese corrente da Firestore
+    // Carica mese
     async function loadMonth(){
-      if(!authed) return; // aspetta auth
       buildGrid();
       monthData.clear();
       const start = `${currentY}-${pad2(currentM)}-01`;
@@ -331,24 +309,22 @@
       const snap  = await getDocs(q);
       snap.forEach(docSnap=>{
         const d = docSnap.data();
-        monthData.set(d.date, {
-          date: d.date,
-          availability: d.availability || {}
-        });
+        monthData.set(d.date, { date:d.date, availability: d.availability || {} });
       });
       renderCells();
     }
 
-    // Popup apertura giorno: mostra elenco completo e precompila i tuoi orari
+    // Popup
     async function openDay(key){
-      if(!savedName){ alert("Prima salva il tuo nome."); return; }
       currentYMD = key;
       const [y,m,d] = key.split("-");
       popupTitle.textContent = `Dettagli ${d}/${m}/${y}`;
       popupError.style.display = "none";
-      fromInp.value = "20:30"; toInp.value = "23:30";
+      needName.style.display = savedName ? "none" : "block";
+      confirmBtn.disabled = !savedName;
+      removeBtn.disabled  = !savedName;
 
-      // assicura dati aggiornati per quel giorno
+      // Assicura dati aggiornati di quel giorno
       const docRef = doc(db, "rooms", room, "days", key);
       const snap = await getDoc(docRef);
       let availability = {};
@@ -360,7 +336,7 @@
         monthData.set(key, { date:key, availability:{} });
       }
 
-      // lista completa
+      // Elenco completo
       namesList.innerHTML = "";
       const entries = Object.entries(availability).sort((a,b)=>a[0].localeCompare(b[0],'it'));
       if(entries.length===0){
@@ -376,10 +352,12 @@
         }
       }
 
-      // se io ho già orari, precompila
+      // Precompila miei orari se presenti
       if(availability[savedName]){
-        fromInp.value = availability[savedName].from || fromInp.value;
-        toInp.value   = availability[savedName].to   || toInp.value;
+        fromInp.value = availability[savedName].from || "20:30";
+        toInp.value   = availability[savedName].to   || "23:30";
+      } else {
+        fromInp.value = "20:30"; toInp.value = "23:30";
       }
 
       popup.style.display = "flex";
@@ -388,7 +366,7 @@
     closeBtn.onclick = ()=> popup.style.display = "none";
 
     confirmBtn.onclick = async ()=>{
-      if(!currentYMD) return;
+      if(!currentYMD || !savedName) return;
       const f = (fromInp.value||'00:00').slice(0,5);
       const t = (toInp.value  ||'23:59').slice(0,5);
       try{
@@ -411,7 +389,7 @@
     };
 
     removeBtn.onclick = async ()=>{
-      if(!currentYMD) return;
+      if(!currentYMD || !savedName) return;
       try{
         const ref = doc(db, "rooms", room, "days", currentYMD);
         await updateDoc(ref, { [`availability.${savedName}`]: deleteField() });
@@ -421,7 +399,6 @@
         popup.style.display="none";
         renderCells();
       }catch(e){
-        // se doc non esiste, è equivalente a rimosso
         popup.style.display="none";
         renderCells();
       }
@@ -432,4 +409,3 @@
   </script>
 </body>
 </html>
-
