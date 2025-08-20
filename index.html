@@ -13,46 +13,59 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="default">
   <meta name="format-detection" content="telephone=no">
 
-  <title>Calendario disponibilità DnD – Nadia</title>
+  <title>Calendario disponibilità DnD</title>
 
   <style>
     :root{ --bg:#f8fafc; --fg:#0f172a; --muted:#64748b; --card:#ffffff; --accent:#4f46e5; --border:#e5e7eb; --ring:#818cf8; }
     *{box-sizing:border-box}
     html{ -webkit-text-size-adjust:100%; }
-    body{margin:0;background:var(--bg);color:var(--fg);font-family:system-ui,Segoe UI,Roboto,Ubuntu,Cantarell,Noto Sans,sans-serif; min-height:100dvh; padding-left:env(safe-area-inset-left); padding-right:env(safe-area-inset-right);}
-    *{ -webkit-tap-highlight-color: transparent; }
-
+    body{
+      margin:0; background:var(--bg); color:var(--fg);
+      font-family:system-ui,Segoe UI,Roboto,Ubuntu,Cantarell,Noto Sans,sans-serif;
+      min-height:100dvh; padding-left:env(safe-area-inset-left); padding-right:env(safe-area-inset-right);
+      -webkit-tap-highlight-color:transparent;
+    }
     .container{max-width:1000px;margin:0 auto;padding:16px 20px}
     h1{font-size:clamp(22px,3vw,28px);margin:0 0 6px 0}
     .sub{color:var(--muted);font-size:14px;margin:0 0 12px 0}
+
     .row{display:grid;grid-template-columns:1.6fr .9fr;gap:16px}
     @media (max-width:900px){.row{grid-template-columns:1fr}}
 
     .card{background:var(--card);border-radius:16px;box-shadow:0 2px 10px rgba(0,0,0,.05);padding:14px;border:1px solid var(--border)}
     .stack{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+
     .btn{border:1px solid var(--border);border-radius:14px;padding:8px 12px;background:#fff;box-shadow:0 1px 3px rgba(0,0,0,.04);cursor:pointer; line-height:1}
     .btn.primary{background:var(--accent);border-color:transparent;color:#fff}
     .btn.small{padding:8px 10px}
-    .select, .input, .number{border:1px solid var(--border);border-radius:12px;padding:8px 10px;background:#fff;outline:none; min-height:40px}
-    .input{min-width:180px}
-    @media (max-width:520px){ .input, .number, .select{ min-width:140px; flex:1 1 140px; } }
+
+    .select, .input, .number, .time{border:1px solid var(--border);border-radius:12px;padding:8px 10px;background:#fff;outline:none; min-height:40px}
+    .input{min-width:160px}
+    .time{min-width:120px}
+    @media (max-width:520px){ .input, .number, .select, .time{ min-width:140px; flex:1 1 140px; } }
     input, select, textarea, button { font-size:16px; } /* evita zoom iOS */
 
     .weeknames{display:grid;grid-template-columns:repeat(7,1fr);text-align:center;color:var(--muted);font-weight:600;padding:4px 0}
-    .grid{display:grid;grid-template-columns:repeat(7,1fr);gap:6px}
-    .cell{aspect-ratio:1/1;background:#fff;border-radius:12px;padding:6px;text-align:left;position:relative;border:1px solid var(--border);cursor:pointer;transition:box-shadow .15s}
+    .grid{display:grid;grid-template-columns:repeat(7,1fr);gap:6px; contain: layout paint;} /* Chrome mobile fix */
+
+    .cell{
+      display:flex; flex-direction:column;
+      aspect-ratio:1/1;background:#fff;border-radius:12px;padding:6px;text-align:left;
+      position:relative;border:1px solid var(--border);cursor:pointer;transition:box-shadow .15s;
+      min-height:0; overflow:hidden; /* evita “salti” quando i nomi si aggiornano */
+    }
     .cell:hover{box-shadow:0 2px 10px rgba(0,0,0,.08)}
     .cell .top{display:flex;align-items:center;justify-content:space-between;font-weight:600}
     .badge{font-size:10px;background:#fff;border-radius:999px;padding:2px 6px;border:1px solid var(--border); line-height:1; display:inline-flex; align-items:center}
     .today{outline:2px solid var(--ring)}
 
-    /* Nomi come "badge" ordinati */
-    .names{ display:flex; flex-wrap:wrap; gap:4px; margin-top:4px; word-break:break-word; }
-    .names .tag{ display:inline-block; background:#e2e8f0; padding:2px 6px; border-radius:6px; font-size:12px; line-height:1.2; color:#1e293b; }
+    /* Nomi come badge, layout stabile */
+    .names{ display:flex; flex-wrap:wrap; gap:4px; margin-top:4px; word-break:break-word; overflow:auto; }
+    .names .tag{ display:inline-block; background:#e2e8f0; padding:2px 6px; border-radius:6px; font-size:12px; line-height:1.2; color:#1e293b; white-space:nowrap; }
 
-    /* Colorazione per conteggio */
-    .cell.full7{ background:#bbf7d0 !important; }   /* 7+ nomi = verde */
-    .cell.almost6{ background:#eaffad !important; } /* 6 nomi = giallo verdastro */
+    /* Colori per conteggio: 7+ verde, 6 giallo-verdastro */
+    .cell.full7{ background:#bbf7d0 !important; }
+    .cell.almost6{ background:#eaffad !important; }
 
     .pill{display:inline-flex;align-items:center;gap:6px;border:1px solid var(--border);border-radius:999px;padding:4px 8px;font-size:12px}
     .ok{color:#065f46;background:#ecfdf5;border-color:#a7f3d0}
@@ -63,6 +76,7 @@
 </head>
 <body>
 <script>
+  /* PWA: registra service worker se presente */
   if ('serviceWorker' in navigator) {
     window.addEventListener('load', () => {
       navigator.serviceWorker.register('./sw.js');
@@ -73,7 +87,7 @@
 <div class="container">
   <header>
     <h1>Calendario disponibilità DnD <span id="pill" class="pill warn">offline</span></h1>
-    <p class="sub">Scrivi <b>Stanza</b> e <b>Nome</b> → clicca <b>Connetti</b>. Clicca un giorno per aggiungere/togliere la tua disponibilità.</p>
+    <p class="sub">Scrivi <b>Stanza</b>, <b>Nome</b> e (opzionale) <b>orari</b> → <b>Connetti</b>. Clicca un giorno per salvare la tua disponibilità con orario.</p>
   </header>
 
   <section class="card" style="margin-bottom:12px">
@@ -83,6 +97,10 @@
         <input id="room" class="input" placeholder="es. dnd">
         <label>Nome</label>
         <input id="name" class="input" placeholder="il tuo nome">
+        <label>Dalle</label>
+        <input id="fromTime" class="time" type="time" value="20:30">
+        <label>Alle</label>
+        <input id="toTime" class="time" type="time" value="23:30">
         <button id="connect" class="btn primary">Connetti</button>
         <button id="copyLink" class="btn small">Copia link stanza</button>
       </div>
@@ -114,7 +132,7 @@
 <script src="https://www.gstatic.com/firebasejs/10.13.1/firebase-firestore-compat.js"></script>
 <script>
 (function(){
-  // Firebase config (Nadia)
+  // === Config Firebase (la tua) ===
   const firebaseConfig = {
     apiKey: "AIzaSyCLe8BSPpF3j5MSoi_6lsXL6RFT8vUVFWk",
     authDomain: "calendario-dnd.firebaseapp.com",
@@ -136,10 +154,11 @@
   const grid = el('grid'), weeknames = el('weeknames'), statusEl = el('status');
   const monthSel = el('monthSel'), yearInp = el('yearInp');
   const roomInp = el('room'), nameInp = el('name'), pill = el('pill');
+  const fromTimeInp = el('fromTime'), toTimeInp = el('toTime');
   const copyLinkBtn = el('copyLink'), connectBtn = el('connect');
   const partEl = el('participants'); const todayBtn = el('todayBtn');
 
-  // Init selects
+  // Intestazioni giorni
   IT_MONTHS.forEach((m,i)=>{ const o=document.createElement('option'); o.value=i; o.textContent=m; monthSel.appendChild(o); });
   const now = new Date(); monthSel.value = now.getMonth(); yearInp.value = now.getFullYear();
   weeknames.innerHTML = IT_WEEKDAYS.map(w=>`<div style="text-align:center;font-weight:600;color:#64748b">${w}</div>`).join('');
@@ -161,17 +180,34 @@
 
   function status(s){ statusEl.textContent = 'Stato: ' + s; }
 
+  // Helpers per compatibilità vecchi dati:
+  // - vecchio schema: { available: ["Nadia", ...] }
+  // - nuovo schema: { availability: { "Nadia": {from:"HH:MM", to:"HH:MM"} , ... } }
+  function normalizeList(docData){
+    const availMap = docData.availability && typeof docData.availability === 'object' ? docData.availability : null;
+    if (availMap){
+      const names = Object.keys(availMap);
+      return { names, items: names.map(n => ({ name:n, ...availMap[n] })) };
+    }
+    const arr = Array.isArray(docData.available)? docData.available : [];
+    return { names: arr, items: arr.map(n => ({ name:n })) };
+  }
+
   function renderCalendar(){
     const y = parseInt(yearInp.value,10), m = parseInt(monthSel.value,10);
     const dim = daysInMonth(y,m); const startOffset = firstDayOfMonth(y,m);
     const todayKey = ymd(new Date());
     grid.innerHTML='';
+
+    // celle vuote iniziali per allineare al lunedì
     for (let i=0;i<startOffset;i++){
       const d=document.createElement('div'); d.className='cell'; d.style.visibility='hidden'; grid.appendChild(d);
     }
+
     for (let d=1; d<=dim; d++){
       const date = new Date(y,m,d); const key = ymd(date);
-      const list = (app.monthCache[key] || []), cnt=list.length;
+      const list = (app.monthCache[key] || []);         // array di {name, from?, to?}
+      const cnt  = list.length;
 
       // classi in base al conteggio
       let statusClass = '';
@@ -181,7 +217,12 @@
       const cell = document.createElement('div');
       cell.className = 'cell' + (key===todayKey?' today':'') + (statusClass?(' '+statusClass):'');
 
-      const chips = list.map(n => `<span class="tag">${n}</span>`).join('');
+      const chips = list.map(x => {
+        const hasTime = x.from && x.to;
+        const label = hasTime ? `${x.name} (${x.from}–${x.to})` : x.name;
+        return `<span class="tag">${label}</span>`;
+      }).join('');
+
       cell.innerHTML = `
         <div class="top">
           <span>${d}</span>
@@ -204,8 +245,9 @@
       app.monthCache = {}; app.participants = new Set();
       snap.forEach(doc=>{
         const d = doc.data();
-        const list = Array.isArray(d.available)?d.available:[];
-        app.monthCache[d.date]=list; list.forEach(n=>app.participants.add(n));
+        const { names, items } = normalizeList(d);
+        app.monthCache[d.date] = items; // [{name, from?, to?}]
+        names.forEach(n => app.participants.add(n));
       });
       partEl.textContent = Array.from(app.participants).sort().join(', ') || '–';
       renderCalendar();
@@ -213,22 +255,39 @@
     }, err=>{ status('Errore onSnapshot: '+err.message); });
   }
 
+  // Scrive nel nuovo schema availability.<Nome> = {from, to}, con fallback per rimuovere (delete).
   async function toggleDay(key){
-    if (!roomInp.value.trim() || !nameInp.value.trim()){ alert('Inserisci stanza e nome, poi Connetti.'); return; }
+    const room = roomInp.value.trim();
+    const name = nameInp.value.trim();
+    if (!room || !name){ alert('Inserisci stanza e nome, poi Connetti.'); return; }
     if (!app.db){ alert('Firebase non configurato.'); return; }
-    const has = (app.monthCache[key]||[]).includes(nameInp.value.trim());
-    const ref = app.db.collection('rooms').doc(roomInp.value.trim()).collection('days').doc(key);
+
+    const ref = app.db.collection('rooms').doc(room).collection('days').doc(key);
+    const current = app.monthCache[key] || []; // array di {name, from?, to?}
+    const already = current.find(x => x.name === name);
+
     try{
-      if (has){
-        await ref.set({ date:key, available: firebase.firestore.FieldValue.arrayRemove(nameInp.value.trim()) }, { merge:true });
-        status('Rimosso '+nameInp.value+' da '+key);
+      if (already){
+        // Se esiste già → rimuovilo (tap per togliere)
+        await ref.set({
+          date: key,
+          // cancella il campo availability.<name>
+          [`availability.${name}`]: firebase.firestore.FieldValue.delete()
+        }, { merge:true });
+        status(`Rimossa disponibilità di ${name} da ${key}`);
       } else {
-        await ref.set({ date:key, available: firebase.firestore.FieldValue.arrayUnion(nameInp.value.trim()) }, { merge:true });
-        status('Aggiunto '+nameInp.value+' a '+key);
+        // Aggiungi/aggiorna con orari (se mancano, fallback 00:00–23:59)
+        const from = (fromTimeInp.value || '00:00').slice(0,5);
+        const to   = (toTimeInp.value   || '23:59').slice(0,5);
+        await ref.set({
+          date: key,
+          [`availability.${name}`]: { from, to }
+        }, { merge:true });
+        status(`Aggiunta disponibilità di ${name} a ${key} (${from}–${to})`);
       }
     }catch(e){
       status('❌ Errore scrittura: '+e.message);
-      alert('Errore scrittura:\n'+e.message+'\n\nControlla Authentication Anonimo e Domini autorizzati.');
+      alert('Errore scrittura:\n'+e.message+'\n\nControlla Authentication Anonimo, Domini autorizzati e Regole Firestore.');
     }
   }
 
@@ -240,17 +299,17 @@
     location.hash = `#room=${encodeURIComponent(roomInp.value)}&name=${encodeURIComponent(nameInp.value)}`;
   }
 
-  connectBtn.onclick = connect;
   copyLinkBtn.onclick = ()=>{
     const base = location.href.split('#')[0];
     const url = `${base}#room=${encodeURIComponent(roomInp.value||'STANZA')}&name=${encodeURIComponent(nameInp.value||'')}`;
     navigator.clipboard.writeText(url).then(()=>alert('Link copiato')).catch(()=>{});
   };
+  connectBtn.onclick = connect;
   monthSel.onchange = ()=>{ renderCalendar(); subscribeMonth(); };
   yearInp.onchange = ()=>{ renderCalendar(); subscribeMonth(); };
   todayBtn.onclick = ()=>{ const t=new Date(); monthSel.value=t.getMonth(); yearInp.value=t.getFullYear(); renderCalendar(); subscribeMonth(); };
 
-  // Restore from hash if present
+  // Ripristina da hash
   (function readHash(){
     const h=new URLSearchParams(location.hash.slice(1));
     const r=h.get('room'), n=h.get('name');
