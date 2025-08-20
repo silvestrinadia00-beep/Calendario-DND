@@ -7,127 +7,108 @@
   <style>
     :root{
       --bg:#f8fafc; --fg:#0f172a; --muted:#64748b;
-      --card:#ffffff; --accent:#4f46e5; --border:#e5e7eb; --ring:#818cf8;
-      --green:#bbf7d0; --yellow:#eaffad; --blue:#93c5fd; --red:#ef4444;
+      --card:#ffffff; --accent:#4f46e5; --border:#e5e7eb;
+      --blue:#93c5fd; --yellow:#fde68a; --green:#bbf7d0; --red:#ef4444;
       --chip:#e2e8f0;
     }
     *{box-sizing:border-box}
-    body{
-      margin:0;background:var(--bg);color:var(--fg);
-      font-family:system-ui,Segoe UI,Roboto,sans-serif;
-      display:flex;flex-direction:column;align-items:center; padding:16px;
-    }
+    body{margin:0;background:var(--bg);color:var(--fg);font-family:system-ui,Segoe UI,Roboto,sans-serif}
+    .container{max-width:980px;margin:0 auto;padding:14px}
 
-    /* Header */
-    .logo{display:flex;justify-content:center;margin:4px 0 10px}
-    .logo img{max-width:320px;width:100%;height:auto;display:block}
+    .logo{display:flex;justify-content:center;margin:6px 0 8px}
+    .logo img{max-width:300px;width:100%;height:auto;display:block}
+    h1{font-size:clamp(22px,3.5vw,28px);margin:6px 0 10px;text-align:center}
 
-    h1{font-size:clamp(22px,3.5vw,28px);margin:6px 0 2px}
-    .muted{color:var(--muted)}
-
-    /* Card & controls */
-    .card{background:var(--card);border-radius:16px;padding:12px;
-      box-shadow:0 2px 8px rgba(0,0,0,.06);border:1px solid var(--border);
-      width:100%;max-width:980px;margin-bottom:12px}
-    input,select,button{
-      font:inherit;padding:8px 10px;border-radius:12px;border:1px solid var(--border);background:#fff
-    }
+    .card{background:var(--card);border:1px solid var(--border);border-radius:16px;padding:12px;box-shadow:0 2px 8px rgba(0,0,0,.06);margin-bottom:12px}
+    input,select,button{font:inherit;padding:8px 10px;border-radius:12px;border:1px solid var(--border);background:#fff}
     button{background:var(--accent);color:#fff;border:none;font-weight:600;cursor:pointer}
     button.ghost{background:#fff;color:var(--fg);border:1px solid var(--border)}
-    button:disabled{opacity:.6;cursor:not-allowed}
-    .namebar{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+    .namebar{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
     .namebar input{min-width:220px;flex:1}
+    .muted{color:var(--muted)}
 
-    /* Calendar grid */
+    /* Calendario compatto */
     .toolbar{display:flex;gap:8px;align-items:center;justify-content:center}
-    .weeknames{display:grid;grid-template-columns:repeat(7,1fr);text-align:center;
-      color:var(--muted);font-weight:600;margin:8px 0 6px}
-    .grid{display:grid;grid-template-columns:repeat(7,1fr);gap:6px}
-
-    /* Vertical day cell */
+    .weeknames,.grid{display:grid;grid-template-columns:repeat(7,minmax(0,1fr))}
+    .weeknames{color:var(--muted);font-weight:700;text-align:center;margin:4px 0 6px}
+    .grid{gap:6px}
     .cell{
-      background:#fff;border:1px solid var(--border);border-radius:14px;min-height:120px;
-      padding:8px;display:flex;flex-direction:column;gap:6px;
-      transition:box-shadow .15s,border-color .15s, background-color .15s;
+      background:#fff;border:1px solid var(--border);border-radius:14px;min-height:72px;
+      padding:6px;display:flex;flex-direction:column;gap:6px;position:relative;
+      transition:box-shadow .15s,border-color .15s, background-color .15s; cursor:pointer;
     }
-    .cell.clickable{cursor:pointer}
     .cell:hover{box-shadow:0 2px 10px rgba(0,0,0,.06)}
-    .cell .top{display:flex;align-items:center;justify-content:space-between}
-    .cell .daynum{font-weight:800}
-    .count{font-size:11px;background:#fff;border:1px solid var(--border);border-radius:999px;padding:2px 6px}
+    .cell.ghost{visibility:hidden;border:none;background:transparent;box-shadow:none;pointer-events:none}
+    .top{display:flex;align-items:center;justify-content:space-between}
+    .daynum{font-weight:800}
+    .badge{font-size:11px;background:#fff;border:1px solid var(--border);border-radius:999px;padding:2px 6px}
+    .dot{position:absolute;left:50%;bottom:6px;transform:translateX(-50%);width:6px;height:6px;border-radius:50%;}
+    .any{border-color:var(--blue);box-shadow:0 0 0 2px rgba(147,197,253,.35) inset}
+    .any .dot{background:#60a5fa}
+    .almost6{background:var(--yellow)}
+    .full7{background:var(--green)}
 
-    .names{display:flex;flex-direction:column;gap:4px;overflow:auto}
-    .tag{display:inline-block;background:var(--chip);border-radius:8px;padding:3px 8px;font-size:13px;color:#1f2937;white-space:nowrap}
+    /* Lista sotto */
+    .dayitem{border:1px solid var(--border);border-radius:12px;padding:10px;margin:8px 0;background:#fff}
+    .dayhead{display:flex;align-items:center;gap:8px;justify-content:space-between}
+    .chips{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
+    .chip{background:var(--chip);padding:4px 8px;border-radius:999px;font-size:13px}
+    .chip.me{border:2px solid var(--accent)}
+    .chip button{margin-left:6px;background:transparent;border:none;color:#ef4444;font-weight:700;cursor:pointer}
 
-    .cell.full7{background:var(--green)}
-    .cell.almost6{background:var(--yellow)}
-    .cell.hasAny{border-color:var(--blue); box-shadow:0 0 0 2px rgba(147,197,253,.3) inset} /* cornice celeste */
-
-    /* Responsive */
-    @media (max-width:860px){ .cell{min-height:130px} }
-    @media (max-width:700px){ .grid{grid-template-columns:repeat(3,1fr)} .cell{min-height:140px} }
-    @media (max-width:460px){ .grid{grid-template-columns:repeat(2,1fr)} .cell{min-height:150px} }
+    /* Responsive: 3→2 colonne */
+    @media (max-width:720px){ .grid{grid-template-columns:repeat(3,minmax(0,1fr))} }
+    @media (max-width:460px){ .grid{grid-template-columns:repeat(2,minmax(0,1fr))} }
 
     /* Popup */
     .popup{position:fixed;inset:0;background:rgba(0,0,0,.5);display:none;align-items:center;justify-content:center;z-index:100}
-    .box{background:#fff;border-radius:16px;padding:14px;width:92%;max-width:460px;border:1px solid var(--border)}
+    .box{background:#fff;border:1px solid var(--border);border-radius:16px;padding:14px;width:92%;max-width:460px}
     .list{margin:6px 0;max-height:260px;overflow:auto;border:1px solid var(--border);border-radius:10px;background:#f9fafb;padding:8px}
     .list .row{padding:6px;border-bottom:1px solid var(--border)}
     .list .row:last-child{border-bottom:none}
     .timebar{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
     .btns{display:flex;gap:8px;margin-top:10px;flex-wrap:wrap}
-    .danger{background:var(--red)}
+    .danger{background:#ef4444;color:#fff}
     .err{color:#b91c1c;margin-top:6px;display:none}
-    /* Celle fantasma per allineare la prima settimana */
-.cell.ghost{
-  visibility: hidden;      /* resta in griglia ma invisibile */
-  border: none;
-  background: transparent;
-  box-shadow: none;
-  pointer-events: none;
-}
-
-/* Assicura colonne identiche */
-.weeknames, .grid{
-  display:grid;
-  grid-template-columns: repeat(7, minmax(0,1fr));
-}
-
   </style>
 </head>
 <body>
-  <!-- LOGO -->
-  <div class="logo">
-    <img src="./Dungeons-and-Dragons-logo.png" alt="Dungeons & Dragons Logo" onerror="this.style.display='none'">
-  </div>
-
-  <h1>Calendario disponibilità D&D</h1>
-
-  <!-- Nome -->
-  <div class="card" style="max-width:560px">
-    <div class="namebar">
-      <label for="nome"><b>Nome</b></label>
-      <input id="nome" placeholder="Scrivi il tuo nome">
-      <button id="saveNameBtn">Salva</button>
-      <span id="okName" class="muted" style="display:none">Nome salvato ✔︎</span>
-    </div>
-  </div>
-
-  <!-- Calendario SEMPRE visibile -->
-  <div class="card" id="calendar">
-    <div class="toolbar">
-      <button id="prevYear"  class="ghost">«</button>
-      <button id="prevMonth" class="ghost">‹</button>
-      <select id="monthSel"></select>
-      <select id="yearSel"></select>
-      <button id="nextMonth" class="ghost">›</button>
-      <button id="nextYear"  class="ghost">»</button>
+  <div class="container">
+    <div class="logo">
+      <img src="./Dungeons-and-Dragons-logo.png" alt="Dungeons & Dragons Logo" onerror="this.parentElement.style.display='none'">
     </div>
 
-    <div class="weeknames">
-      <div>Lun</div><div>Mar</div><div>Mer</div><div>Gio</div><div>Ven</div><div>Sab</div><div>Dom</div>
+    <h1>Calendario disponibilità D&D</h1>
+
+    <div class="card">
+      <div class="namebar">
+        <label for="nome"><b>Nome</b></label>
+        <input id="nome" placeholder="Scrivi il tuo nome">
+        <button id="saveNameBtn">Salva</button>
+        <span id="okName" class="muted" style="display:none">Nome salvato ✔︎</span>
+      </div>
     </div>
-    <div class="grid" id="grid"></div>
+
+    <div class="card">
+      <div class="toolbar">
+        <button id="prevYear"  class="ghost">«</button>
+        <button id="prevMonth" class="ghost">‹</button>
+        <select id="monthSel"></select>
+        <select id="yearSel"></select>
+        <button id="nextMonth" class="ghost">›</button>
+        <button id="nextYear"  class="ghost">»</button>
+      </div>
+
+      <div class="weeknames">
+        <div>Lun</div><div>Mar</div><div>Mer</div><div>Gio</div><div>Ven</div><div>Sab</div><div>Dom</div>
+      </div>
+      <div class="grid" id="grid"></div>
+    </div>
+
+    <div class="card">
+      <h3 style="margin:0 0 6px 0">Disponibilità del mese</h3>
+      <div id="daysList" class="muted">Nessuna disponibilità registrata.</div>
+    </div>
   </div>
 
   <!-- Popup -->
@@ -145,13 +126,12 @@
         <button id="closeBtn"   class="ghost">Chiudi</button>
       </div>
       <div id="popupError" class="err"></div>
-      <div id="needName" class="muted" style="margin-top:6px;display:none">Scrivi e salva il tuo nome per poter confermare/cancellare.</div>
+      <div id="needName" class="muted" style="margin-top:6px;display:none">Per confermare/cancellare devi salvare il tuo nome.</div>
     </div>
   </div>
 
   <!-- Firebase + App -->
   <script type="module">
-    // Firebase (modular)
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.13.1/firebase-app.js";
     import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.13.1/firebase-auth.js";
     import {
@@ -169,11 +149,12 @@
     const auth = getAuth(app);
     const db   = getFirestore(app);
 
-    // ==== UI refs
+    // Refs
     const nomeInput = document.getElementById("nome");
     const saveNameBtn = document.getElementById("saveNameBtn");
     const okName = document.getElementById("okName");
     const grid = document.getElementById("grid");
+    const daysList = document.getElementById("daysList");
     const monthSel = document.getElementById("monthSel");
     const yearSel  = document.getElementById("yearSel");
     const prevMonthBtn = document.getElementById("prevMonth");
@@ -192,141 +173,145 @@
     const popupError = document.getElementById("popupError");
     const needName   = document.getElementById("needName");
 
-    // ==== State
-    const room = "dnd"; // fisso
-    let savedName = "";
+    // Stato
+    const room = "dnd";
+    let savedName = localStorage.getItem('dnd_name') || "";
+    if (savedName) {
+      nomeInput.value = savedName; nomeInput.disabled = true; saveNameBtn.disabled = true; okName.style.display = "inline";
+    }
     let authed = false;
     let currentY = new Date().getFullYear();
-    let currentM = new Date().getMonth()+1; // 1..12
-    let monthData = new Map(); // key YYYY-MM-DD -> { availability:{} }
+    let currentM = new Date().getMonth()+1;
+    let monthData = new Map(); // YYYY-MM-DD -> { availability:{} }
     let currentYMD = null;
 
-    // ==== Helpers
+    // Helpers
     const pad2 = n => String(n).padStart(2,"0");
     const ymd  = (y,m,d) => `${y}-${pad2(m)}-${pad2(d)}`;
-    const dim  = (y,m) => new Date(y, m, 0).getDate(); // m=1..12
-    const firstDowMon0 = (y,m) => (new Date(y, m-1, 1).getDay() + 6) % 7; // Mon=0..Sun=6
+    const dim  = (y,m) => new Date(y, m, 0).getDate();
+    const firstDowMon0 = (y,m) => (new Date(y, m-1, 1).getDay() + 6) % 7;
     const IT_MONTHS = ["Gennaio","Febbraio","Marzo","Aprile","Maggio","Giugno","Luglio","Agosto","Settembre","Ottobre","Novembre","Dicembre"];
+    function slugifyName(name){
+      const s = (name||"").normalize("NFKD").replace(/[\u0300-\u036f]/g,"").toLowerCase().trim().replace(/[^a-z0-9]+/g,"-").replace(/(^-|-$)/g,"");
+      return s || "utente";
+    }
+    const safeDisplay = (v,k)=> (v && v.display && v.display.trim()) ? v.display.trim() : k;
 
-    // Fill selectors (anni fino al 2099)
+    // Selectors (anni fino a 2099)
     function fillSelectors(){
       monthSel.innerHTML = IT_MONTHS.map((n,i)=>`<option value="${i+1}">${n}</option>`).join('');
-      // anni 1970..2099 (così sei a posto)
-      const years = [];
-      for(let y=1970; y<=2099; y++) years.push(`<option value="${y}">${y}</option>`);
-      yearSel.innerHTML = years.join('');
-      monthSel.value = String(currentM);
-      yearSel.value  = String(currentY);
+      const ys=[]; for(let y=1970;y<=2099;y++) ys.push(`<option value="${y}">${y}</option>`);
+      yearSel.innerHTML = ys.join('');
+      monthSel.value = String(currentM); yearSel.value = String(currentY);
     }
     fillSelectors();
 
-    // Auth anonima (per scrivere)
+    // Auth anonima
     onAuthStateChanged(auth, (user)=>{ authed = !!user; });
     signInAnonymously(auth).catch(e=>alert("Errore auth anonima: " + e.message));
 
-    // Salva nome (abilita i bottoni nel popup)
+    // Salva nome
     saveNameBtn.addEventListener("click", ()=>{
       const n = nomeInput.value.trim();
-      if(!n){ alert("Inserisci un nome valido."); return; }
+      if (n.length < 2) return alert("Il nome deve avere almeno 2 caratteri.");
+      if (n.length > 40) return alert("Nome troppo lungo.");
       savedName = n;
-      nomeInput.disabled = true;
-      saveNameBtn.disabled = true;
-      okName.style.display = "inline";
+      localStorage.setItem('dnd_name', savedName);
+      nomeInput.disabled = true; saveNameBtn.disabled = true; okName.style.display = "inline";
     });
 
     // Navigazione
     function navMonth(delta){
       let m = Number(monthSel.value), y = Number(yearSel.value);
-      m += delta;
-      if(m<1){ m=12; y--; }
-      if(m>12){ m=1; y++; }
-      if(y<1970) y=1970;
-      if(y>2099) y=2099;
-      monthSel.value = m; yearSel.value = y;
-      onMonthChange();
+      m += delta; if(m<1){m=12;y--;} if(m>12){m=1;y++;}
+      monthSel.value = m; yearSel.value = y; onMonthChange();
     }
     prevMonthBtn.onclick = ()=> navMonth(-1);
     nextMonthBtn.onclick = ()=> navMonth(+1);
-    prevYearBtn.onclick  = ()=> { yearSel.value = Math.max(1970, Number(yearSel.value)-1); onMonthChange(); };
-    nextYearBtn.onclick  = ()=> { yearSel.value = Math.min(2099, Number(yearSel.value)+1); onMonthChange(); };
+    prevYearBtn.onclick  = ()=> { yearSel.value = Number(yearSel.value)-1; onMonthChange(); };
+    nextYearBtn.onclick  = ()=> { yearSel.value = Number(yearSel.value)+1; onMonthChange(); };
     monthSel.onchange = yearSel.onchange = onMonthChange;
 
     function onMonthChange(){
-      currentM = Number(monthSel.value);
-      currentY = Number(yearSel.value);
-      loadMonth();
+      currentM = Number(monthSel.value); currentY = Number(yearSel.value); loadMonth();
     }
 
-    // Build grid
-function buildGrid(){
-  grid.innerHTML = "";
-  const offset = firstDowMon0(currentY,currentM); // lun=0..dom=6
-
-  // Celle fantasma all'inizio
-  for (let i = 0; i < offset; i++) {
-    const ghost = document.createElement("div");
-    ghost.className = "cell ghost";
-    ghost.innerHTML = `
-      <div class="top">
-        <span class="daynum"></span>
-        <span class="count"></span>
-      </div>
-      <div class="names"></div>
-    `;
-    grid.appendChild(ghost);
-  }
-
-  // Giorni reali
-  const days = dim(currentY,currentM);
-  for (let d = 1; d <= days; d++) {
-    const key = ymd(currentY,currentM,d);
-    const cell = document.createElement("div");
-    cell.className = "cell clickable";
-    cell.dataset.key = key;
-    cell.innerHTML = `
-      <div class="top">
-        <span class="daynum">${d}</span>
-        <span class="count"></span>
-      </div>
-      <div class="names"></div>
-    `;
-    cell.addEventListener("click", ()=> openDay(key));
-    grid.appendChild(cell);
-  }
-}
-
-
-    // Render celle
-    function renderCells(){
+    // Build grid (ghosts per allineamento)
+    function buildGrid(){
+      grid.innerHTML = "";
+      const offset = firstDowMon0(currentY,currentM);
+      for (let i=0;i<offset;i++){
+        const ghost = document.createElement("div");
+        ghost.className = "cell ghost";
+        ghost.innerHTML = `<div class="top"><span class="daynum"></span><span class="badge"></span></div><div class="dot"></div>`;
+        grid.appendChild(ghost);
+      }
       const days = dim(currentY,currentM);
       for(let d=1; d<=days; d++){
         const key = ymd(currentY,currentM,d);
+        const cell = document.createElement("div");
+        cell.className = "cell";
+        cell.dataset.key = key;
+        cell.innerHTML = `
+          <div class="top">
+            <span class="daynum">${d}</span>
+            <span class="badge"></span>
+          </div>
+          <div class="dot"></div>
+        `;
+        cell.addEventListener("click", ()=> openDay(key));
+        grid.appendChild(cell);
+      }
+    }
+
+    // Render celle + lista
+    function renderCellsAndList(){
+      const days = dim(currentY,currentM);
+      const items = [];
+      for(let d=1; d<=days; d++){
+        const key = ymd(currentY,currentM,d);
         const cell = grid.querySelector(`.cell[data-key="${key}"]`);
-        if(!cell) continue;
         const data = monthData.get(key) || { availability:{} };
         const avail = data.availability || {};
-        const names = Object.keys(avail).sort((a,b)=>a.localeCompare(b,'it'));
+        const names = Object.keys(avail).sort((a,b)=>safeDisplay(avail[a],a).localeCompare(safeDisplay(avail[b],b),'it'));
         const cnt = names.length;
 
-        const countEl = cell.querySelector('.count');
-        countEl.textContent = cnt ? cnt : '';
-        const namesEl = cell.querySelector('.names');
-        namesEl.innerHTML = '';
-        names.forEach(n=>{
-          const t = avail[n]||{};
-          const chip = document.createElement('div');
-          chip.className='tag';
-          const ff = t.from ? t.from : 'nd';
-          const tt = t.to   ? t.to   : 'nd';
-          chip.textContent = `${n} (${ff}–${tt})`;
-          namesEl.appendChild(chip);
-        });
+        if (cell){
+          const badge = cell.querySelector('.badge');
+          const dot = cell.querySelector('.dot');
+          cell.classList.remove('any','almost6','full7');
+          badge.textContent = cnt ? cnt : '';
+          if (cnt >= 7) cell.classList.add('full7');
+          else if (cnt === 6) cell.classList.add('almost6');
+          if (cnt > 0) cell.classList.add('any'); // blu bordo
+          if (dot) dot.style.background = (cnt>=7)?'#22c55e' : (cnt===6)?'#ca8a04' : (cnt>0)?'#60a5fa' : 'transparent';
+        }
 
-        cell.classList.remove('full7','almost6','hasAny');
-        if(cnt >= 7) cell.classList.add('full7');
-        else if(cnt === 6) cell.classList.add('almost6');
-        if(cnt > 0) cell.classList.add('hasAny'); // cornice celeste
+        if (cnt>0){
+          const dateObj = new Date(currentY, currentM-1, d);
+          const dd = String(d).padStart(2,'0');
+          const ww = ['Dom','Lun','Mar','Mer','Gio','Ven','Sab'][dateObj.getDay()];
+          const head = `${dd}/${pad2(currentM)} – ${ww}`;
+          const chips = names.map(k=>{
+            const t = avail[k]||{};
+            const shown = safeDisplay(t,k);
+            const ff = t.from||'nd', tt = t.to||'nd';
+            const mine = savedName && (slugifyName(savedName)===k);
+            return `<span class="chip ${mine?'me':''}" data-key="${k}" data-day="${key}">${shown} (${ff}–${tt})${mine?' <button title="Rimuovi">×</button>':''}</span>`;
+          }).join('');
+          items.push(`<div class="dayitem"><div class="dayhead"><div><b>${head}</b></div><div class="muted">${cnt} persone</div></div><div class="chips">${chips}</div></div>`);
+        }
       }
+      daysList.innerHTML = items.length ? items.join('') : 'Nessuna disponibilità registrata.';
+
+      // click sul chip "mio" per cancellare
+      daysList.querySelectorAll('.chip.me button').forEach(btn=>{
+        btn.addEventListener('click', async (ev)=>{
+          ev.stopPropagation();
+          const span = ev.currentTarget.closest('.chip');
+          await removeAvailability(span.dataset.day, span.dataset.key);
+        });
+      });
     }
 
     // Carica mese
@@ -342,7 +327,7 @@ function buildGrid(){
         const d = docSnap.data();
         monthData.set(d.date, { date:d.date, availability: d.availability || {} });
       });
-      renderCells();
+      renderCellsAndList();
     }
 
     // Popup
@@ -355,9 +340,8 @@ function buildGrid(){
       confirmBtn.disabled = !savedName;
       removeBtn.disabled  = !savedName;
 
-      // Assicura dati aggiornati di quel giorno
-      const docRef = doc(db, "rooms", room, "days", key);
-      const snap = await getDoc(docRef);
+      const ref = doc(db, "rooms", room, "days", key);
+      const snap = await getDoc(ref);
       let availability = {};
       if(snap.exists()){
         const data = snap.data();
@@ -367,75 +351,74 @@ function buildGrid(){
         monthData.set(key, { date:key, availability:{} });
       }
 
-      // Elenco completo
       namesList.innerHTML = "";
-      const entries = Object.entries(availability).sort((a,b)=>a[0].localeCompare(b[0],'it'));
+      const entries = Object.entries(availability).sort((a,b)=>safeDisplay(a[1],a[0]).localeCompare(safeDisplay(b[1],b[0]),'it'));
       if(entries.length===0){
         namesList.innerHTML = `<div class="row">Nessuna disponibilità registrata.</div>`;
-      }else{
-        for(const [n,t] of entries){
-          const ff = t?.from || 'nd';
-          const tt = t?.to   || 'nd';
+      } else {
+        for(const [k,t] of entries){
+          const shown = safeDisplay(t,k);
+          const ff=t?.from||'nd', tt=t?.to||'nd';
           const row = document.createElement('div');
-          row.className='row';
-          row.textContent = `${n} (${ff}–${tt})`;
+          row.className = 'row';
+          row.textContent = `${shown} (${ff}–${tt})`;
           namesList.appendChild(row);
         }
       }
 
-      // Precompila miei orari se presenti
-      if(availability[savedName]){
-        fromInp.value = availability[savedName].from || "20:30";
-        toInp.value   = availability[savedName].to   || "23:30";
-      } else {
-        fromInp.value = "20:30"; toInp.value = "23:30";
-      }
+      const myKey = slugifyName(savedName);
+      if(availability[myKey]){
+        fromInp.value = availability[myKey].from || "20:30";
+        toInp.value   = availability[myKey].to   || "23:30";
+      } else { fromInp.value = "20:30"; toInp.value = "23:30"; }
 
       popup.style.display = "flex";
     }
+    document.getElementById('closeBtn').onclick = ()=> popup.style.display = "none";
 
-    closeBtn.onclick = ()=> popup.style.display = "none";
-
-    confirmBtn.onclick = async ()=>{
+    document.getElementById('confirmBtn').onclick = async ()=>{
       if(!currentYMD || !savedName) return;
       const f = (fromInp.value||'00:00').slice(0,5);
       const t = (toInp.value  ||'23:59').slice(0,5);
+      const k = slugifyName(savedName);
       try{
         const ref = doc(db, "rooms", room, "days", currentYMD);
-        await setDoc(ref, {
-          date: currentYMD,
-          [`availability.${savedName}`]: { from: f, to: t }
-        }, { merge:true });
-        // aggiorna cache e UI
+        await setDoc(ref, { date: currentYMD, availability: { [k]: { display:savedName, from:f, to:t } } }, { merge:true });
         const cur = monthData.get(currentYMD) || { date:currentYMD, availability:{} };
         cur.availability = cur.availability || {};
-        cur.availability[savedName] = { from:f, to:t };
+        cur.availability[k] = { display:savedName, from:f, to:t };
         monthData.set(currentYMD, cur);
-        popup.style.display="none";
-        renderCells();
+        popup.style.display = "none";
+        renderCellsAndList();
       }catch(e){
         popupError.textContent = "Errore salvataggio: " + e.message;
         popupError.style.display = "block";
       }
     };
 
-    removeBtn.onclick = async ()=>{
+    document.getElementById('removeBtn').onclick = async ()=>{
       if(!currentYMD || !savedName) return;
-      try{
-        const ref = doc(db, "rooms", room, "days", currentYMD);
-        await updateDoc(ref, { [`availability.${savedName}`]: deleteField() });
-        const cur = monthData.get(currentYMD) || { date:currentYMD, availability:{} };
-        if(cur.availability) delete cur.availability[savedName];
-        monthData.set(currentYMD, cur);
-        popup.style.display="none";
-        renderCells();
-      }catch(e){
-        popup.style.display="none";
-        renderCells();
-      }
+      const k = slugifyName(savedName);
+      await removeAvailability(currentYMD, k, true);
     };
 
-    // Primo caricamento
+    async function removeAvailability(dayKey, personKey, closePopup=false){
+      try{
+        const ref = doc(db, "rooms", room, "days", dayKey);
+        const s = await getDoc(ref);
+        if(!s.exists()){ await setDoc(ref, { date:dayKey, availability:{} }, { merge:true }); }
+        await updateDoc(ref, { [`availability.${personKey}`]: deleteField() });
+        const cur = monthData.get(dayKey) || { date:dayKey, availability:{} };
+        if(cur.availability) delete cur.availability[personKey];
+        monthData.set(dayKey, cur);
+        if(closePopup) popup.style.display = "none";
+        renderCellsAndList();
+      }catch(e){
+        alert("Errore cancellazione: " + e.message);
+      }
+    }
+
+    // Start
     loadMonth();
   </script>
 </body>
