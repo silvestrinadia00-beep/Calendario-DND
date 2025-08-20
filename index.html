@@ -34,7 +34,14 @@
   .muted{color:var(--muted);font-size:12px}
 </style>
 </head>
-<body>
+<body><script>
+  if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => {
+      navigator.serviceWorker.register('./sw.js');
+    });
+  }
+</script>
+
 <div class="container">
   <header>
     <h1>Calendario disponibilità DnD <span id="pill" class="pill warn">offline</span></h1>
