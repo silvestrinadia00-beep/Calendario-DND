@@ -1,0 +1,219 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<title>Calendario disponibilità DnD – Nadia</title>
+<style>
+  :root{ --bg:#f8fafc; --fg:#0f172a; --muted:#64748b; --card:#ffffff; --accent:#4f46e5; --border:#e5e7eb; --ring:#818cf8; }
+  *{box-sizing:border-box} body{margin:0;background:var(--bg);color:var(--fg);font-family:system-ui,Segoe UI,Roboto,Ubuntu,Cantarell,Noto Sans,sans-serif}
+  .container{max-width:1000px;margin:0 auto;padding:16px 20px}
+  h1{font-size:clamp(22px,3vw,28px);margin:0 0 6px 0}
+  .sub{color:var(--muted);font-size:14px;margin:0 0 12px 0}
+  .row{display:grid;grid-template-columns:1.6fr .9fr;gap:16px} @media (max-width:900px){.row{grid-template-columns:1fr}}
+  .card{background:var(--card);border-radius:16px;box-shadow:0 2px 10px rgba(0,0,0,.05);padding:12px;border:1px solid var(--border)}
+  .stack{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+  .btn{border:1px solid var(--border);border-radius:14px;padding:8px 12px;background:#fff;box-shadow:0 1px 3px rgba(0,0,0,.04);cursor:pointer}
+  .btn.primary{background:var(--accent);border-color:transparent;color:#fff}
+  .select, .input, .number{border:1px solid var(--border);border-radius:12px;padding:8px 10px;background:#fff;outline:none}
+  .weeknames{display:grid;grid-template-columns:repeat(7,1fr);text-align:center;color:var(--muted);font-weight:600;padding:4px 0}
+  .grid{display:grid;grid-template-columns:repeat(7,1fr);gap:6px}
+  .cell{aspect-ratio:1/1;background:#fff;border-radius:12px;padding:6px;text-align:left;position:relative;border:1px solid var(--border);cursor:pointer;transition:box-shadow .15s}
+  .cell:hover{box-shadow:0 2px 10px rgba(0,0,0,.08)}
+  .cell .top{display:flex;align-items:center;justify-content:space-between;font-weight:600}
+  .badge{font-size:10px;background:#fff;border-radius:999px;padding:2px 6px;border:1px solid var(--border)}
+  .names{margin-top:4px;font-size:10px;color:#334155;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden}
+  .today{outline:2px solid var(--ring)}
+  .pill{display:inline-flex;align-items:center;gap:6px;border:1px solid var(--border);border-radius:999px;padding:4px 8px;font-size:12px}
+  .ok{color:#065f46;background:#ecfdf5;border-color:#a7f3d0}
+  .warn{color:#92400e;background:#fffbeb;border-color:#fcd34d}
+  .err{color:#991b1b;background:#fee2e2;border-color:#fecaca}
+  .muted{color:var(--muted);font-size:12px}
+</style>
+</head>
+<body>
+<div class="container">
+  <header>
+    <h1>Calendario disponibilità DnD <span id="pill" class="pill warn">offline</span></h1>
+    <p class="sub">Scrivi <b>Stanza</b> e <b>Nome</b> → clicca <b>Connetti</b>. Clicca un giorno per aggiungere/togliere la tua disponibilità.</p>
+  </header>
+
+  <section class="card" style="margin-bottom:12px">
+    <div class="stack" style="justify-content:space-between">
+      <div class="stack">
+        <label>Stanza</label>
+        <input id="room" class="input" placeholder="es. party-roma" style="min-width:180px">
+        <label>Nome</label>
+        <input id="name" class="input" placeholder="il tuo nome" style="min-width:160px">
+        <button id="connect" class="btn primary">Connetti</button>
+        <button id="copyLink" class="btn">Copia link stanza</button>
+      </div>
+      <div class="stack">
+        <select id="monthSel" class="select"></select>
+        <input id="yearInp" class="number" type="number" style="width:100px">
+        <button id="todayBtn" class="btn">Oggi</button>
+      </div>
+    </div>
+    <p id="hint" class="muted" style="margin-top:8px">Se compare un errore di scrittura: attiva “Authentication → Anonimo” e metti le regole Firestore indicate più sotto.</p>
+  </section>
+
+  <section class="row">
+    <div class="card">
+      <div class="weeknames" id="weeknames"></div>
+      <div class="grid" id="grid"></div>
+      <div id="status" class="muted" style="margin-top:8px">Stato: pronto</div>
+    </div>
+
+    <aside class="card">
+      <h3 style="margin:6px 0 8px 0">Partecipanti (mese)</h3>
+      <div id="participants" class="muted">–</div>
+      <hr style="border:none;border-top:1px solid var(--border);margin:10px 0">
+      <h3 style="margin:6px 0 8px 0">Se vedi errore di scrittura</h3>
+      <ol class="muted" style="margin-top:6px">
+        <li>Firebase → <b>Authentication</b> → <b>Metodo di accesso</b> → <b>Anonimo</b>: <u>Attivo</u></li>
+        <li>Firebase → <b>Firestore Database</b> → <b>Regole</b> → incolla e Pubblica:<br>
+<pre style="white-space:pre-wrap;background:#f1f5f9;padding:8px;border-radius:8px;border:1px solid #e2e8f0">
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{db}/documents {
+    match /rooms/{room}/days/{day} {
+      allow read: if true;
+      allow write: if request.auth != null;
+    }
+  }
+}
+</pre>
+        </li>
+      </ol>
+    </aside>
+  </section>
+</div>
+
+<!-- Firebase SDKs -->
+<script src="https://www.gstatic.com/firebasejs/10.13.1/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.13.1/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.13.1/firebase-firestore-compat.js"></script>
+<script>
+(function(){
+  // Nadia's Firebase config (embedded)
+  const firebaseConfig = {
+    apiKey: "AIzaSyCLe8BSPpF3j5MSoi_6lsXL6RFT8vUVFWk",
+    authDomain: "calendario-dnd.firebaseapp.com",
+    projectId: "calendario-dnd",
+    storageBucket: "calendario-dnd.firebasestorage.app",
+    messagingSenderId: "796079275815",
+    appId: "1:796079275815:web:cb72fd997d2f3879f4f302",
+    measurementId: "G-2JS3K42Q86"
+  };
+
+  const IT_MONTHS = ["Gennaio","Febbraio","Marzo","Aprile","Maggio","Giugno","Luglio","Agosto","Settembre","Ottobre","Novembre","Dicembre"];
+  const IT_WEEKDAYS = ["Lun","Mar","Mer","Gio","Ven","Sab","Dom"];
+  const pad = n => String(n).padStart(2,'0');
+  const ymd = d => d instanceof Date ? `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}` : d;
+  const firstDayOfMonth = (y,m) => (new Date(y, m, 1).getDay() + 6) % 7;
+  const daysInMonth = (y,m) => new Date(y, m+1, 0).getDate();
+  const el = id => document.getElementById(id);
+
+  const grid = el('grid'), weeknames = el('weeknames'), statusEl = el('status');
+  const monthSel = el('monthSel'), yearInp = el('yearInp');
+  const roomInp = el('room'), nameInp = el('name'), pill = el('pill');
+  const copyLinkBtn = el('copyLink'), connectBtn = el('connect');
+  const partEl = el('participants'); const todayBtn = el('todayBtn');
+
+  // Init selects
+  IT_MONTHS.forEach((m,i)=>{ const o=document.createElement('option'); o.value=i; o.textContent=m; monthSel.appendChild(o); });
+  const now = new Date(); monthSel.value = now.getMonth(); yearInp.value = now.getFullYear();
+  weeknames.innerHTML = IT_WEEKDAYS.map(w=>`<div style="text-align:center;font-weight:600;color:#64748b">${w}</div>`).join('');
+
+  // Firebase init (embedded config)
+  let app = { db:null, auth:null, user:null, unsub:null, monthCache:{}, participants:new Set() };
+  try{
+    firebase.initializeApp(firebaseConfig);
+    app.auth = firebase.auth(); app.db = firebase.firestore();
+    app.db.settings({ ignoreUndefinedProperties: true });
+    app.auth.onAuthStateChanged(user => {
+      app.user = user;
+      if (user){ pill.className='pill ok'; pill.textContent='online'; status('Autenticato (anonimo)'); }
+      else { pill.className='pill warn'; pill.textContent='offline'; status('Non autenticato'); }
+    });
+    app.auth.signInAnonymously().catch(e=>{ pill.className='pill err'; pill.textContent='errore'; status('Auth error: '+e.message); });
+    status('Firebase inizializzato');
+  }catch(e){ pill.className='pill err'; pill.textContent='errore'; status('Init error: '+e.message); }
+
+  function status(s){ statusEl.textContent = 'Stato: ' + s; }
+
+  function renderCalendar(){
+    const y = parseInt(yearInp.value,10), m = parseInt(monthSel.value,10);
+    const dim = daysInMonth(y,m); const startOffset = firstDayOfMonth(y,m);
+    const todayKey = ymd(new Date());
+    grid.innerHTML='';
+    for (let i=0;i<startOffset;i++){ const d=document.createElement('div'); d.className='cell'; d.style.visibility='hidden'; grid.appendChild(d); }
+    for (let d=1; d<=dim; d++){
+      const date = new Date(y,m,d); const key = ymd(date);
+      const cell = document.createElement('div'); cell.className='cell'+(key===todayKey?' today':'');
+      const list = (app.monthCache[key] || []), cnt=list.length;
+      cell.innerHTML = `<div class="top"><span>${d}</span>${cnt?`<span class="badge">${cnt}</span>`:''}</div>${cnt?`<div class="names">${list.join(', ')}</div>`:''}`;
+      cell.onclick = ()=> toggleDay(key);
+      grid.appendChild(cell);
+    }
+  }
+
+  function subscribeMonth(){
+    if (!app.db || !roomInp.value.trim()) return;
+    if (app.unsub) app.unsub();
+    const y = parseInt(yearInp.value,10), m = parseInt(monthSel.value,10);
+    const start = `${y}-${pad(m+1)}-01`, end = `${y}-${pad(m+1)}-31`;
+    const col = app.db.collection('rooms').doc(roomInp.value.trim()).collection('days');
+    app.unsub = col.where('date','>=',start).where('date','<=',end).onSnapshot(snap=>{
+      app.monthCache = {}; app.participants = new Set();
+      snap.forEach(doc=>{ const d = doc.data(); const list = Array.isArray(d.available)?d.available:[]; app.monthCache[d.date]=list; list.forEach(n=>app.participants.add(n)); });
+      partEl.textContent = Array.from(app.participants).sort().join(', ') || '–';
+      renderCalendar();
+      status('Sincronizzato');
+    }, err=>{ status('Errore onSnapshot: '+err.message); });
+  }
+
+  async function toggleDay(key){
+    if (!roomInp.value.trim() || !nameInp.value.trim()){ alert('Inserisci stanza e nome, poi Connetti.'); return; }
+    if (!app.db){ alert('Firebase non configurato.'); return; }
+    const has = (app.monthCache[key]||[]).includes(nameInp.value.trim());
+    const ref = app.db.collection('rooms').doc(roomInp.value.trim()).collection('days').doc(key);
+    try{
+      if (has){
+        await ref.set({ date:key, available: firebase.firestore.FieldValue.arrayRemove(nameInp.value.trim()) }, { merge:true });
+        status('Rimosso '+nameInp.value+' da '+key);
+      } else {
+        await ref.set({ date:key, available: firebase.firestore.FieldValue.arrayUnion(nameInp.value.trim()) }, { merge:true });
+        status('Aggiunto '+nameInp.value+' a '+key);
+      }
+    }catch(e){
+      status('❌ Errore scrittura: '+e.message);
+      alert('Errore scrittura:\n'+e.message+'\n\nSu Firebase attiva Authentication → Anonimo e metti le Regole mostrate a destra.');
+    }
+  }
+
+  function connect(){
+    if (!roomInp.value.trim() || !nameInp.value.trim()){ alert('Inserisci stanza e nome.'); return; }
+    subscribeMonth();
+    status('Connesso a '+roomInp.value+' come '+nameInp.value);
+    const base = location.href.split('#')[0];
+    location.hash = `#room=${encodeURIComponent(roomInp.value)}&name=${encodeURIComponent(nameInp.value)}`;
+  }
+
+  connectBtn.onclick = connect;
+  copyLinkBtn.onclick = ()=>{
+    const base = location.href.split('#')[0];
+    const url = `${base}#room=${encodeURIComponent(roomInp.value||'STANZA')}&name=${encodeURIComponent(nameInp.value||'')}`;
+    navigator.clipboard.writeText(url).then(()=>alert('Link copiato')).catch(()=>{});
+  };
+  monthSel.onchange = ()=>{ renderCalendar(); subscribeMonth(); };
+  yearInp.onchange = ()=>{ renderCalendar(); subscribeMonth(); };
+  todayBtn.onclick = ()=>{ const t=new Date(); monthSel.value=t.getMonth(); yearInp.value=t.getFullYear(); renderCalendar(); subscribeMonth(); };
+
+  // Restore from hash if present
+  (function readHash(){ const h=new URLSearchParams(location.hash.slice(1)); const r=h.get('room'), n=h.get('name'); if (r) roomInp.value=r; if (n) nameInp.value=n; })();
+  renderCalendar();
+})();
+</script>
+</body>
+</html>
