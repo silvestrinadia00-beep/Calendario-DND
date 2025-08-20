@@ -15,40 +15,48 @@
     body{margin:0;background:var(--bg);color:var(--fg);font-family:system-ui,Segoe UI,Roboto,sans-serif}
     .container{max-width:980px;margin:0 auto;padding:14px}
 
+    /* Logo + titolo */
     .logo{display:flex;justify-content:center;margin:6px 0 8px}
-    .logo img{max-width:300px;width:100%;height:auto;display:block}
-    h1{font-size:clamp(22px,3.5vw,28px);margin:6px 0 10px;text-align:center}
+    .logo img{max-width:260px;width:100%;height:auto;display:block}
+    h1{font-size:clamp(20px,3.2vw,26px);margin:6px 0 10px;text-align:center}
 
+    /* Card e controlli */
     .card{background:var(--card);border:1px solid var(--border);border-radius:16px;padding:12px;box-shadow:0 2px 8px rgba(0,0,0,.06);margin-bottom:12px}
     input,select,button{font:inherit;padding:8px 10px;border-radius:12px;border:1px solid var(--border);background:#fff}
     button{background:var(--accent);color:#fff;border:none;font-weight:600;cursor:pointer}
     button.ghost{background:#fff;color:var(--fg);border:1px solid var(--border)}
     .namebar{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
-    .namebar input{min-width:220px;flex:1}
+    .namebar input{min-width:200px;flex:1}
     .muted{color:var(--muted)}
 
-    /* Calendario compatto */
-    .toolbar{display:flex;gap:8px;align-items:center;justify-content:center}
+    /* ===== Calendario compatto (7 colonne SEMPRE) ===== */
+    .toolbar{display:flex;gap:6px;align-items:center;justify-content:center}
     .weeknames,.grid{display:grid;grid-template-columns:repeat(7,minmax(0,1fr))}
     .weeknames{color:var(--muted);font-weight:700;text-align:center;margin:4px 0 6px}
-    .grid{gap:6px}
+    .grid{gap:4px}
+
     .cell{
-      background:#fff;border:1px solid var(--border);border-radius:14px;min-height:72px;
-      padding:6px;display:flex;flex-direction:column;gap:6px;position:relative;
+      background:#fff;border:1px solid var(--border);border-radius:10px;
+      /* QUADRATI PICCOLI E ALLINEATI */
+      aspect-ratio:1/1;         /* <- quadrato perfetto anche su mobile */
+      padding:6px; display:flex; flex-direction:column; gap:2px; position:relative;
       transition:box-shadow .15s,border-color .15s, background-color .15s; cursor:pointer;
     }
     .cell:hover{box-shadow:0 2px 10px rgba(0,0,0,.06)}
     .cell.ghost{visibility:hidden;border:none;background:transparent;box-shadow:none;pointer-events:none}
+
     .top{display:flex;align-items:center;justify-content:space-between}
-    .daynum{font-weight:800}
-    .badge{font-size:11px;background:#fff;border:1px solid var(--border);border-radius:999px;padding:2px 6px}
-    .dot{position:absolute;left:50%;bottom:6px;transform:translateX(-50%);width:6px;height:6px;border-radius:50%;}
+    .daynum{font-weight:800;font-size:12px}
+    .badge{font-size:10px;background:#fff;border:1px solid var(--border);border-radius:999px;padding:1px 5px}
+    .dot{position:absolute;left:50%;bottom:6px;transform:translateX(-50%);width:5px;height:5px;border-radius:50%}
+
+    /* Stati colore */
     .any{border-color:var(--blue);box-shadow:0 0 0 2px rgba(147,197,253,.35) inset}
     .any .dot{background:#60a5fa}
     .almost6{background:var(--yellow)}
     .full7{background:var(--green)}
 
-    /* Lista sotto */
+    /* ===== Lista sotto (giorni con disponibilità) ===== */
     .dayitem{border:1px solid var(--border);border-radius:12px;padding:10px;margin:8px 0;background:#fff}
     .dayhead{display:flex;align-items:center;gap:8px;justify-content:space-between}
     .chips{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
@@ -56,14 +64,10 @@
     .chip.me{border:2px solid var(--accent)}
     .chip button{margin-left:6px;background:transparent;border:none;color:#ef4444;font-weight:700;cursor:pointer}
 
-    /* Responsive: 3→2 colonne */
-    @media (max-width:720px){ .grid{grid-template-columns:repeat(3,minmax(0,1fr))} }
-    @media (max-width:460px){ .grid{grid-template-columns:repeat(2,minmax(0,1fr))} }
-
     /* Popup */
     .popup{position:fixed;inset:0;background:rgba(0,0,0,.5);display:none;align-items:center;justify-content:center;z-index:100}
-    .box{background:#fff;border:1px solid var(--border);border-radius:16px;padding:14px;width:92%;max-width:460px}
-    .list{margin:6px 0;max-height:260px;overflow:auto;border:1px solid var(--border);border-radius:10px;background:#f9fafb;padding:8px}
+    .box{background:#fff;border:1px solid var(--border);border-radius:16px;padding:14px;width:92%;max-width:420px}
+    .list{margin:6px 0;max-height:220px;overflow:auto;border:1px solid var(--border);border-radius:10px;background:#f9fafb;padding:8px}
     .list .row{padding:6px;border-bottom:1px solid var(--border)}
     .list .row:last-child{border-bottom:none}
     .timebar{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
@@ -74,12 +78,14 @@
 </head>
 <body>
   <div class="container">
+    <!-- LOGO -->
     <div class="logo">
       <img src="./Dungeons-and-Dragons-logo.png" alt="Dungeons & Dragons Logo" onerror="this.parentElement.style.display='none'">
     </div>
 
     <h1>Calendario disponibilità D&D</h1>
 
+    <!-- Nome -->
     <div class="card">
       <div class="namebar">
         <label for="nome"><b>Nome</b></label>
@@ -89,6 +95,7 @@
       </div>
     </div>
 
+    <!-- Calendario -->
     <div class="card">
       <div class="toolbar">
         <button id="prevYear"  class="ghost">«</button>
@@ -105,6 +112,7 @@
       <div class="grid" id="grid"></div>
     </div>
 
+    <!-- Lista giorni con disponibilità -->
     <div class="card">
       <h3 style="margin:0 0 6px 0">Disponibilità del mese</h3>
       <div id="daysList" class="muted">Nessuna disponibilità registrata.</div>
@@ -181,7 +189,7 @@
     }
     let authed = false;
     let currentY = new Date().getFullYear();
-    let currentM = new Date().getMonth()+1;
+    let currentM = new Date().getMonth()+1; // 1..12
     let monthData = new Map(); // YYYY-MM-DD -> { availability:{} }
     let currentYMD = null;
 
@@ -208,7 +216,7 @@
 
     // Auth anonima
     onAuthStateChanged(auth, (user)=>{ authed = !!user; });
-    signInAnonymously(auth).catch(e=>alert("Errore auth anonima: " + e.message));
+    signInAnonymously(auth).catch(()=>{});
 
     // Salva nome
     saveNameBtn.addEventListener("click", ()=>{
@@ -236,7 +244,7 @@
       currentM = Number(monthSel.value); currentY = Number(yearSel.value); loadMonth();
     }
 
-    // Build grid (ghosts per allineamento)
+    // Build grid con ghost
     function buildGrid(){
       grid.innerHTML = "";
       const offset = firstDowMon0(currentY,currentM);
@@ -283,7 +291,7 @@
           badge.textContent = cnt ? cnt : '';
           if (cnt >= 7) cell.classList.add('full7');
           else if (cnt === 6) cell.classList.add('almost6');
-          if (cnt > 0) cell.classList.add('any'); // blu bordo
+          if (cnt > 0) cell.classList.add('any'); // bordo blu
           if (dot) dot.style.background = (cnt>=7)?'#22c55e' : (cnt===6)?'#ca8a04' : (cnt>0)?'#60a5fa' : 'transparent';
         }
 
@@ -304,7 +312,7 @@
       }
       daysList.innerHTML = items.length ? items.join('') : 'Nessuna disponibilità registrata.';
 
-      // click sul chip "mio" per cancellare
+      // cancella dal chip (solo il mio)
       daysList.querySelectorAll('.chip.me button').forEach(btn=>{
         btn.addEventListener('click', async (ev)=>{
           ev.stopPropagation();
@@ -374,9 +382,9 @@
 
       popup.style.display = "flex";
     }
-    document.getElementById('closeBtn').onclick = ()=> popup.style.display = "none";
+    closeBtn.onclick = ()=> popup.style.display = "none";
 
-    document.getElementById('confirmBtn').onclick = async ()=>{
+    confirmBtn.onclick = async ()=>{
       if(!currentYMD || !savedName) return;
       const f = (fromInp.value||'00:00').slice(0,5);
       const t = (toInp.value  ||'23:59').slice(0,5);
@@ -396,7 +404,7 @@
       }
     };
 
-    document.getElementById('removeBtn').onclick = async ()=>{
+    removeBtn.onclick = async ()=>{
       if(!currentYMD || !savedName) return;
       const k = slugifyName(savedName);
       await removeAvailability(currentYMD, k, true);
