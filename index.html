@@ -1,382 +1,201 @@
 <!DOCTYPE html>
 <html lang="it">
 <head>
-  <!-- PWA -->
-  <link rel="manifest" href="./manifest.webmanifest" />
-  <meta name="theme-color" content="#4f46e5" />
-  <link rel="icon" href="./icon-192.png" sizes="192x192" />
-  <link rel="apple-touch-icon" href="./icon-192.png" />
-
   <meta charset="utf-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-  <meta name="apple-mobile-web-app-capable" content="yes">
-  <meta name="apple-mobile-web-app-status-bar-style" content="default">
-  <meta name="format-detection" content="telephone=no">
-
-  <title>Calendario disponibilità DnD</title>
-
+  <title>Calendario disponibilità D&D</title>
   <style>
-    :root{ --bg:#f8fafc; --fg:#0f172a; --muted:#64748b; --card:#ffffff; --accent:#4f46e5; --border:#e5e7eb; --ring:#818cf8; }
-    *{box-sizing:border-box}
-    html{ -webkit-text-size-adjust:100%; }
+    :root{
+      --bg:#f8fafc; --fg:#0f172a; --muted:#64748b;
+      --card:#ffffff; --accent:#4f46e5; --border:#e5e7eb;
+      --ring:#818cf8;
+      --green:#22c55e; --yellow:#a3e635;
+    }
+    *{box-sizing:border-box;}
     body{
       margin:0; background:var(--bg); color:var(--fg);
-      font-family:system-ui,Segoe UI,Roboto,Ubuntu,Cantarell,Noto Sans,sans-serif;
-      min-height:100dvh; padding-left:env(safe-area-inset-left); padding-right:env(safe-area-inset-right);
-      -webkit-tap-highlight-color:transparent;
+      font-family:system-ui,Segoe UI,Roboto,sans-serif;
+      display:flex; flex-direction:column; align-items:center;
+      padding:1rem;
     }
-    .container{max-width:1000px;margin:0 auto;padding:16px 20px}
-    h1{font-size:clamp(22px,3vw,28px);margin:0 0 6px 0}
-    .sub{color:var(--muted);font-size:14px;margin:0 0 12px 0}
-
-    .row{display:grid;grid-template-columns:1.6fr .9fr;gap:16px}
-    @media (max-width:900px){.row{grid-template-columns:1fr}}
-
-    .card{background:var(--card);border-radius:16px;box-shadow:0 2px 10px rgba(0,0,0,.05);padding:14px;border:1px solid var(--border)}
-    .stack{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
-
-    .btn{border:1px solid var(--border);border-radius:14px;padding:8px 12px;background:#fff;box-shadow:0 1px 3px rgba(0,0,0,.04);cursor:pointer; line-height:1}
-    .btn.primary{background:var(--accent);border-color:transparent;color:#fff}
-    .btn.small{padding:8px 10px}
-
-    .select, .input, .number, .time{border:1px solid var(--border);border-radius:12px;padding:8px 10px;background:#fff;outline:none; min-height:40px}
-    .input{min-width:160px}
-    .time{min-width:120px}
-    @media (max-width:520px){ .input, .number, .select, .time{ min-width:140px; flex:1 1 140px; } }
-    input, select, textarea, button { font-size:16px; } /* evita zoom iOS */
-
-    .weeknames{display:grid;grid-template-columns:repeat(7,1fr);text-align:center;color:var(--muted);font-weight:600;padding:4px 0}
-
-    /* ===== Griglia ===== */
-    .grid{display:grid;grid-template-columns:repeat(7,1fr);gap:6px}
-
-    /* Desktop/tablet: celle quadrate perfette */
+    h1{font-size:1.4rem; margin:0.5rem 0 1rem;}
+    .card{
+      background:var(--card); border-radius:1rem; padding:1rem;
+      box-shadow:0 2px 6px rgba(0,0,0,0.08); width:100%; max-width:400px;
+      margin-bottom:1rem;
+    }
+    input,button{
+      font:inherit; padding:0.4rem 0.6rem; border-radius:0.5rem;
+      border:1px solid var(--border);
+    }
+    button{
+      background:var(--accent); color:white; cursor:pointer;
+      border:none; font-weight:600;
+    }
+    button:hover{background:#4338ca;}
+    .calendar{width:100%;}
+    .weeknames,.grid{
+      display:grid; grid-template-columns:repeat(7,1fr);
+    }
+    .weeknames{font-weight:600; text-align:center; color:var(--muted); margin-bottom:4px;}
     .cell{
-      position:relative; border:1px solid var(--border); border-radius:12px; background:#fff; cursor:pointer;
-      overflow:hidden; transition:box-shadow .15s;
+      border:1px solid var(--border); margin:2px; border-radius:0.6rem;
+      min-height:60px; padding:2px; font-size:0.8rem;
+      position:relative; background:white; cursor:pointer;
+      display:flex; flex-direction:column; align-items:center; justify-content:flex-start;
     }
-    .cell::before{ content:""; display:block; padding-top:100%; } /* mantiene il quadrato */
-    .cell:hover{box-shadow:0 2px 10px rgba(0,0,0,.08)}
-
-    .cell .inner{
-      position:absolute; inset:6px; display:flex; flex-direction:column; min-height:0;
+    .cell span.daynum{font-weight:600;}
+    .cell .count{font-size:0.7rem; margin-top:auto;}
+    .cell.green{background:var(--green); color:white;}
+    .cell.yellow{background:var(--yellow);}
+    /* Popup */
+    .popup{
+      position:fixed; inset:0; background:rgba(0,0,0,0.5);
+      display:none; align-items:center; justify-content:center;
+      z-index:100;
     }
-
-    /* Mobile stretto: niente quadrato → più alto, leggibile */
-    @media (max-width:520px){
-      .cell::before{ content:none; padding-top:0; }
-      .cell .inner{ position:relative; inset:auto; padding:6px; }
-      .cell{ min-height:100px; } /* aumenta se vuoi più spazio nomi */
+    .popup .box{
+      background:white; border-radius:1rem; padding:1rem; width:90%; max-width:400px;
     }
-
-    .top{display:flex; align-items:center; justify-content:space-between; font-weight:600}
-    .badge{font-size:11px;background:#fff;border-radius:999px;padding:2px 6px;border:1px solid var(--border); line-height:1; display:inline-flex; align-items:center}
-    .today{outline:2px solid var(--ring)}
-
-    /* Nomi come badge */
-    .names{ display:flex; flex-wrap:wrap; gap:6px; margin-top:6px; word-break:break-word; overflow:hidden; }
-    .names .tag{ display:inline-block; background:#e2e8f0; padding:3px 8px; border-radius:8px; font-size:13px; line-height:1.2; color:#1e293b; white-space:nowrap; }
-
-    /* Colori per conteggio: 7+ verde, 6 giallo-verdastro */
-    .cell.full7{ background:#bbf7d0 !important; }
-    .cell.almost6{ background:#eaffad !important; }
-
-    .pill{display:inline-flex;align-items:center;gap:6px;border:1px solid var(--border);border-radius:999px;padding:4px 8px;font-size:12px}
-    .ok{color:#065f46;background:#ecfdf5;border-color:#a7f3d0}
-    .warn{color:#92400e;background:#fffbeb;border-color:#fcd34d}
-    .err{color:#991b1b;background:#fee2e2;border-color:#fecaca}
-    .muted{color:var(--muted);font-size:12px}
-    /* ===== FIX MOBILE CALENDAR ===== */
-
-/* Celle più alte su schermi piccoli */
-@media (max-width: 600px) {
-  .grid {
-    grid-template-columns: repeat(7, 1fr);
-    gap: 4px;
-  }
-
-  .cell {
-    min-height: 80px;          /* aumenta l’altezza della cella */
-    font-size: 12px;           /* testi più piccoli */
-    overflow-y: auto;          /* scroll verticale se ci sono tanti nomi */
-    -webkit-overflow-scrolling: touch;
-  }
-
-  .cell .names {
-    display: flex;
-    flex-direction: column;
-    gap: 2px;
-    font-size: 11px;
-    line-height: 1.2;
-    word-break: break-word;
-  }
-
-  .cell .names span {
-    background: rgba(0,0,0,0.05);
-    border-radius: 4px;
-    padding: 1px 2px;
-    text-align: center;
-  }
-}
+    .names-list{margin:0.5rem 0; max-height:200px; overflow:auto; font-size:0.9rem;}
+    .names-list div{margin:2px 0; padding:2px 4px; border-bottom:1px solid var(--border);}
   </style>
 </head>
 <body>
-<script>
-  /* PWA: registra service worker se presente */
-  if ('serviceWorker' in navigator) {
-    window.addEventListener('load', () => {
-      navigator.serviceWorker.register('./sw.js');
-    });
-  }
-</script>
+  <h1>Calendario disponibilità D&D</h1>
 
-<div class="container">
-  <header>
-    <h1>Calendario disponibilità DnD <span id="pill" class="pill warn">offline</span></h1>
-    <p class="sub">Scrivi <b>Stanza</b>, <b>Nome</b> e (opz.) <b>orari</b> → <b>Connetti</b>. Clicca un giorno per aggiungere/togliere la tua disponibilità.</p>
-  </header>
+  <div class="card">
+    <label>Il tuo nome:</label><br>
+    <input id="nome" placeholder="Scrivi il tuo nome">
+  </div>
 
-  <section class="card" style="margin-bottom:12px">
-    <div class="stack" style="justify-content:space-between">
-      <div class="stack">
-        <label>Stanza</label>
-        <input id="room" class="input" placeholder="es. dnd">
-        <label>Nome</label>
-        <input id="name" class="input" placeholder="il tuo nome">
-        <label>Dalle</label>
-        <input id="fromTime" class="time" type="time" value="20:30">
-        <label>Alle</label>
-        <input id="toTime" class="time" type="time" value="23:30">
-        <button id="connect" class="btn primary">Connetti</button>
-        <button id="copyLink" class="btn small">Copia link stanza</button>
+  <div class="card calendar">
+    <div class="weeknames">
+      <div>Lun</div><div>Mar</div><div>Mer</div><div>Gio</div><div>Ven</div><div>Sab</div><div>Dom</div>
+    </div>
+    <div class="grid" id="grid"></div>
+  </div>
+
+  <!-- Popup giorno -->
+  <div class="popup" id="popup">
+    <div class="box">
+      <h3 id="popupDay">Dettagli giorno</h3>
+      <div class="names-list" id="list"></div>
+      <div style="margin-top:0.5rem">
+        <label>Dalle <input id="from" type="time"></label>
+        <label>Alle <input id="to" type="time"></label>
       </div>
-      <div class="stack">
-        <select id="monthSel" class="select"></select>
-        <input id="yearInp" class="number" type="number" style="width:100px">
-        <button id="todayBtn" class="btn small">Oggi</button>
+      <div style="display:flex; gap:0.5rem; margin-top:1rem;">
+        <button id="confirm">Conferma</button>
+        <button id="remove" style="background:#ef4444;">Cancella</button>
+        <button id="close" style="background:#6b7280;">Chiudi</button>
       </div>
     </div>
-  </section>
+  </div>
 
-  <section class="row">
-    <div class="card">
-      <div class="weeknames" id="weeknames"></div>
-      <div class="grid" id="grid"></div>
-      <div id="status" class="muted" style="margin-top:8px">Stato: pronto</div>
-    </div>
+  <script type="module">
+    // Firebase
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+    import { getFirestore, doc, getDoc, setDoc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
-    <aside class="card">
-      <h3 style="margin:6px 0 8px 0">Partecipanti (mese)</h3>
-      <div id="participants" class="muted">–</div>
-    </aside>
-  </section>
-</div>
+    const firebaseConfig = {
+      apiKey: "AIzaSyCLe8BSPpF3j5MSoi_6lsXL6RFT8vUVFWk",
+      authDomain: "calendario-dnd.firebaseapp.com",
+      projectId: "calendario-dnd",
+    };
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
 
-<!-- Firebase SDKs -->
-<script src="https://www.gstatic.com/firebasejs/10.13.1/firebase-app-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/10.13.1/firebase-auth-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/10.13.1/firebase-firestore-compat.js"></script>
-<script>
-(function(){
-  // === Config Firebase ===
-  const firebaseConfig = {
-    apiKey: "AIzaSyCLe8BSPpF3j5MSoi_6lsXL6RFT8vUVFWk",
-    authDomain: "calendario-dnd.firebaseapp.com",
-    projectId: "calendario-dnd",
-    storageBucket: "calendario-dnd.firebasestorage.app",
-    messagingSenderId: "796079275815",
-    appId: "1:796079275815:web:cb72fd997d2f3879f4f302",
-    measurementId: "G-2JS3K42Q86"
-  };
+    const nomeInput = document.getElementById("nome");
+    const grid = document.getElementById("grid");
+    const popup = document.getElementById("popup");
+    const popupDay = document.getElementById("popupDay");
+    const list = document.getElementById("list");
+    const from = document.getElementById("from");
+    const to = document.getElementById("to");
+    const btnConfirm = document.getElementById("confirm");
+    const btnRemove = document.getElementById("remove");
+    const btnClose = document.getElementById("close");
 
-  const IT_MONTHS = ["Gennaio","Febbraio","Marzo","Aprile","Maggio","Giugno","Luglio","Agosto","Settembre","Ottobre","Novembre","Dicembre"];
-  const IT_WEEKDAYS = ["Lun","Mar","Mer","Gio","Ven","Sab","Dom"];
-  const pad = n => String(n).padStart(2,'0');
-  const ymd = d => `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`;
-  const firstDayOfMonth = (y,m) => (new Date(y, m, 1).getDay() + 6) % 7;
-  const daysInMonth = (y,m) => new Date(y, m+1, 0).getDate();
-  const el = id => document.getElementById(id);
-  const isMobile = () => window.matchMedia('(max-width: 520px)').matches;
+    let currentDay = null;
+    const room = "dnd"; // fisso
 
-  const grid = el('grid'), weeknames = el('weeknames'), statusEl = el('status');
-  const monthSel = el('monthSel'), yearInp = el('yearInp');
-  const roomInp = el('room'), nameInp = el('name'), pill = el('pill');
-  const fromTimeInp = el('fromTime'), toTimeInp = el('toTime');
-  const copyLinkBtn = el('copyLink'), connectBtn = el('connect');
-  const partEl = el('participants'); const todayBtn = el('todayBtn');
+    // Costruisci mese attuale
+    const today = new Date();
+    const year = today.getFullYear();
+    const month = today.getMonth();
+    const firstDay = new Date(year,month,1).getDay()||7;
+    const daysInMonth = new Date(year,month+1,0).getDate();
 
-  // Intestazioni giorni
-  IT_MONTHS.forEach((m,i)=>{ const o=document.createElement('option'); o.value=i; o.textContent=m; monthSel.appendChild(o); });
-  const now = new Date(); monthSel.value = now.getMonth(); yearInp.value = now.getFullYear();
-  weeknames.innerHTML = IT_WEEKDAYS.map(w=>`<div style="text-align:center;font-weight:600;color:#64748b">${w}</div>`).join('');
-
-  // Firebase init
-  let app = { db:null, auth:null, user:null, unsub:null, monthCache:{}, participants:new Set() };
-  try{
-    firebase.initializeApp(firebaseConfig);
-    app.auth = firebase.auth(); app.db = firebase.firestore();
-    app.db.settings({ ignoreUndefinedProperties: true });
-    app.auth.onAuthStateChanged(user => {
-      app.user = user;
-      if (user){ pill.className='pill ok'; pill.textContent='online'; status('Autenticato (anonimo)'); }
-      else { pill.className='pill warn'; pill.textContent='offline'; status('Non autenticato'); }
-    });
-    app.auth.signInAnonymously().catch(e=>{ pill.className='pill err'; pill.textContent='errore'; status('Auth error: '+e.message); });
-    status('Firebase inizializzato');
-  }catch(e){ pill.className='pill err'; pill.textContent='errore'; status('Init error: '+e.message); }
-
-  function status(s){ statusEl.textContent = 'Stato: ' + s; }
-
-  // Compat: vecchi dati (array) / nuovi (availability mappa)
-  function normalizeList(docData){
-    const availMap = docData.availability && typeof docData.availability === 'object' ? docData.availability : null;
-    if (availMap){
-      const names = Object.keys(availMap);
-      return { names, items: names.map(n => ({ name:n, ...availMap[n] })) };
-    }
-    const arr = Array.isArray(docData.available)? docData.available : [];
-    return { names: arr, items: arr.map(n => ({ name:n })) };
-  }
-
-  // Crea i chip dei nomi, limitando su mobile + badge “+N”
-  function makeChips(list){
-    const limit = isMobile() ? 4 : 8;
-    const shown = list.slice(0, limit);
-    const extra = list.length - shown.length;
-    const chips = shown.map(x => {
-      const hasTime = x.from && x.to;
-      const label = hasTime ? `${x.name} (${x.from}–${x.to})` : x.name;
-      return `<span class="tag">${label}</span>`;
-    }).join('');
-    const more = extra > 0 ? `<span class="tag">+${extra}</span>` : '';
-    return chips + more;
-  }
-
-  function renderCalendar(){
-    const y = parseInt(yearInp.value,10), m = parseInt(monthSel.value,10);
-    const dim = daysInMonth(y,m); const startOffset = firstDayOfMonth(y,m);
-    const todayKey = ymd(new Date());
-    grid.innerHTML='';
-
-    // buchi iniziali (allinea al lunedì)
-    for (let i=0;i<startOffset;i++){
-      const ghost = document.createElement('div');
-      ghost.className = 'cell';
-      ghost.style.visibility='hidden';
-      grid.appendChild(ghost);
-    }
-
-    for (let d=1; d<=dim; d++){
-      const date = new Date(y,m,d); const key = ymd(date);
-      const list = (app.monthCache[key] || []);         // [{name, from?, to?}]
-      const cnt  = list.length;
-
-      let statusClass = '';
-      if (cnt >= 7) statusClass = 'full7';
-      else if (cnt === 6) statusClass = 'almost6';
-
-      const cell = document.createElement('div');
-      cell.className = 'cell' + (statusClass?(' '+statusClass):'') + (key===todayKey?' today':'');
-
-      const chips = list.length ? makeChips(list) : '';
-
-      cell.innerHTML = `
-        <div class="inner">
-          <div class="top">
-            <span>${d}</span>
-            ${cnt?`<span class="badge">${cnt}</span>`:''}
-          </div>
-          ${chips?`<div class="names">${chips}</div>`:''}
-        </div>
-      `;
-      cell.onclick = ()=> toggleDay(key);
+    for(let i=1;i<firstDay;i++){ let d=document.createElement("div"); grid.appendChild(d); }
+    for(let d=1; d<=daysInMonth; d++){
+      let cell=document.createElement("div");
+      cell.className="cell"; cell.innerHTML="<span class='daynum'>"+d+"</span><div class='count'></div>";
+      cell.onclick=()=>openDay(d);
       grid.appendChild(cell);
     }
-  }
 
-  function subscribeMonth(){
-    if (!app.db || !roomInp.value.trim()) return;
-    if (app.unsub) app.unsub();
-    const y = parseInt(yearInp.value,10), m = parseInt(monthSel.value,10);
-    const start = `${y}-${pad(m+1)}-01`, end = `${y}-${pad(m+1)}-31`;
-    const col = app.db.collection('rooms').doc(roomInp.value.trim()).collection('days');
-    app.unsub = col.where('date','>=',start).where('date','<=',end).onSnapshot(snap=>{
-      app.monthCache = {}; app.participants = new Set();
-      snap.forEach(doc=>{
-        const d = doc.data();
-        const { names, items } = normalizeList(d);
-        app.monthCache[d.date] = items;
-        names.forEach(n => app.participants.add(n));
+    async function openDay(day){
+      if(!nomeInput.value.trim()){ alert("Scrivi il tuo nome!"); return; }
+      currentDay=day;
+      popupDay.textContent="Giorno "+day+"-"+(month+1);
+      from.value=""; to.value="";
+      // carica dati
+      const ref=doc(db,room,`${year}-${month+1}-${day}`);
+      const snap=await getDoc(ref);
+      const data=snap.exists()?snap.data():{};
+      list.innerHTML="";
+      let entries=Object.entries(data);
+      entries.forEach(([n,orari])=>{
+        let div=document.createElement("div");
+        div.textContent=n+(orari?` (${orari.from||""}-${orari.to||""})`:"");
+        list.appendChild(div);
+        if(n===nomeInput.value){ from.value=orari.from||""; to.value=orari.to||""; }
       });
-      partEl.textContent = Array.from(app.participants).sort().join(', ') || '–';
-      renderCalendar();
-      status('Sincronizzato');
-    }, err=>{ status('Errore onSnapshot: '+err.message); });
-  }
-
-  // Scrive availability.<Nome> = {from, to}, tap per togliere
-  async function toggleDay(key){
-    const room = roomInp.value.trim();
-    const name = nameInp.value.trim();
-    if (!room || !name){ alert('Inserisci stanza e nome, poi Connetti.'); return; }
-    if (!app.db){ alert('Firebase non configurato.'); return; }
-
-    const ref = app.db.collection('rooms').doc(room).collection('days').doc(key);
-    const current = app.monthCache[key] || [];
-    const already = current.find(x => x.name === name);
-
-    try{
-      if (already){
-        await ref.set({
-          date: key,
-          [`availability.${name}`]: firebase.firestore.FieldValue.delete()
-        }, { merge:true });
-        status(`Rimossa disponibilità di ${name} da ${key}`);
-      } else {
-        const from = (fromTimeInp.value || '00:00').slice(0,5);
-        const to   = (toTimeInp.value   || '23:59').slice(0,5);
-        await ref.set({
-          date: key,
-          [`availability.${name}`]: { from, to }
-        }, { merge:true });
-        status(`Aggiunta disponibilità di ${name} a ${key} (${from}–${to})`);
-      }
-    }catch(e){
-      status('❌ Errore scrittura: '+e.message);
-      alert('Errore scrittura:\n'+e.message+'\n\nControlla Authentication Anonimo, Domini autorizzati e Regole Firestore.');
+      popup.style.display="flex";
     }
-  }
 
-  function connect(){
-    if (!roomInp.value.trim() || !nameInp.value.trim()){ alert('Inserisci stanza e nome.'); return; }
-    subscribeMonth();
-    status('Connesso a '+roomInp.value+' come '+nameInp.value);
-    const base = location.href.split('#')[0];
-    location.hash = `#room=${encodeURIComponent(roomInp.value)}&name=${encodeURIComponent(nameInp.value)}`;
-  }
+    btnConfirm.onclick=async()=>{
+      if(!currentDay) return;
+      const ref=doc(db,room,`${year}-${month+1}-${currentDay}`);
+      const snap=await getDoc(ref);
+      let data=snap.exists()?snap.data():{};
+      data[nomeInput.value]={from:from.value,to:to.value};
+      await setDoc(ref,data);
+      popup.style.display="none";
+      render();
+    };
+    btnRemove.onclick=async()=>{
+      if(!currentDay) return;
+      const ref=doc(db,room,`${year}-${month+1}-${currentDay}`);
+      const snap=await getDoc(ref);
+      let data=snap.exists()?snap.data():{};
+      delete data[nomeInput.value];
+      await setDoc(ref,data);
+      popup.style.display="none";
+      render();
+    };
+    btnClose.onclick=()=>popup.style.display="none";
 
-  copyLinkBtn.onclick = ()=>{
-    const base = location.href.split('#')[0];
-    const url = `${base}#room=${encodeURIComponent(roomInp.value||'STANZA')}&name=${encodeURIComponent(nameInp.value||'')}`;
-    navigator.clipboard.writeText(url).then(()=>alert('Link copiato')).catch(()=>{});
-  };
-  connectBtn.onclick = connect;
-  monthSel.onchange = ()=>{ renderCalendar(); subscribeMonth(); };
-  yearInp.onchange = ()=>{ renderCalendar(); subscribeMonth(); };
-  todayBtn.onclick = ()=>{ const t=new Date(); monthSel.value=t.getMonth(); yearInp.value=t.getFullYear(); renderCalendar(); subscribeMonth(); };
-
-  // Ripristina da hash
-  (function readHash(){
-    const h=new URLSearchParams(location.hash.slice(1));
-    const r=h.get('room'), n=h.get('name');
-    if (r) roomInp.value=r; if (n) nameInp.value=n;
-  })();
-
-  // Rerender quando cambia breakpoint (ruoti il telefono)
-  window.matchMedia('(max-width: 520px)').addEventListener('change', renderCalendar);
-
-  renderCalendar();
-})();
-</script>
+    async function render(){
+      for(let d=1; d<=daysInMonth; d++){
+        let cell=grid.querySelectorAll(".cell")[d-1];
+        const ref=doc(db,room,`${year}-${month+1}-${d}`);
+        const snap=await getDoc(ref);
+        if(snap.exists()){
+          let count=Object.keys(snap.data()).length;
+          let badge=cell.querySelector(".count");
+          badge.textContent=count>0?count:"";
+          cell.classList.remove("green","yellow");
+          if(count>=7) cell.classList.add("green");
+          else if(count===6) cell.classList.add("yellow");
+        } else {
+          cell.querySelector(".count").textContent="";
+          cell.classList.remove("green","yellow");
+        }
+      }
+    }
+    render();
+  </script>
 </body>
 </html>
