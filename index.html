@@ -35,7 +35,13 @@
 
     h1 {
       font-size: 1.4rem;
-      margin: 0.5rem 0 1rem;
+      margin: 0.5rem 0 0;
+    }
+
+    .subtitle {
+      color: var(--muted);
+      margin-bottom: 1rem;
+      font-size: 0.9rem;
     }
 
     .card {
@@ -191,6 +197,7 @@
 </head>
 <body>
   <h1>Calendario disponibilità D&D</h1>
+  <div id="monthYear" class="subtitle"></div>
 
   <div class="card">
     <label for="nome">Il tuo nome:</label><br>
@@ -250,6 +257,7 @@
     const btnRemove = document.getElementById("remove");
     const btnClose = document.getElementById("close");
     const nameConfirmation = document.getElementById("nameConfirmation");
+    const monthYearDisplay = document.getElementById("monthYear");
 
     let savedName = "";
     let currentDay = null;
@@ -261,10 +269,13 @@
     const month = today.getMonth();
     const firstDay = new Date(year, month, 1).getDay() || 7;
     const daysInMonth = new Date(year, month + 1, 0).getDate();
+    const monthNames = ["Gennaio", "Febbraio", "Marzo", "Aprile", "Maggio", "Giugno", "Luglio", "Agosto", "Settembre", "Ottobre", "Novembre", "Dicembre"];
+
+    monthYearDisplay.textContent = `${monthNames[month]} ${year}`;
 
     // Popola la griglia del calendario
     function populateCalendar() {
-        grid.innerHTML = ""; // Pulisce il calendario
+        grid.innerHTML = "";
         for (let i = 1; i < firstDay; i++) {
             let d = document.createElement("div");
             grid.appendChild(d);
@@ -279,17 +290,14 @@
     }
     populateCalendar();
 
-    // Funzione per inizializzare i listener sulle celle del calendario
-    function initCalendarListeners() {
-      const cells = grid.querySelectorAll(".cell");
-      cells.forEach(cell => {
-        const day = cell.dataset.day;
-        if (day) { // Assicura che la cella rappresenti un giorno
-            cell.classList.add('clickable');
-            cell.onclick = () => openDay(day);
+    // Gestione dei clic sulle celle (delegazione degli eventi)
+    grid.addEventListener('click', (event) => {
+        const clickedCell = event.target.closest('.cell');
+        if (clickedCell && !calendar.classList.contains('disabled')) {
+            const day = clickedCell.dataset.day;
+            openDay(day);
         }
-      });
-    }
+    });
 
     // Gestione del salvataggio del nome
     saveNameBtn.onclick = () => {
@@ -300,8 +308,7 @@
         saveNameBtn.style.display = 'none';
         nameConfirmation.style.display = 'block';
         calendar.classList.remove("disabled");
-        initCalendarListeners();
-        render(); // Aggiorna il calendario con i dati esistenti
+        render();
       } else {
         alert("Per favore, inserisci un nome valido.");
       }
@@ -313,7 +320,7 @@
         return;
       }
       currentDay = day;
-      popupDay.textContent = `Giorno ${day}-${month + 1}`;
+      popupDay.textContent = `Giorno ${day} ${monthNames[month]}`;
       from.value = "";
       to.value = "";
 
