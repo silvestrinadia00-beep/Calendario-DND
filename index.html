@@ -37,8 +37,7 @@
 
     .cell{
       background:#fff;border:1px solid var(--border);border-radius:10px;
-      /* QUADRATI PICCOLI E ALLINEATI */
-      aspect-ratio:1/1;         /* <- quadrato perfetto anche su mobile */
+      aspect-ratio:1/1; /* quadrato perfetto anche su mobile */
       padding:6px; display:flex; flex-direction:column; gap:2px; position:relative;
       transition:box-shadow .15s,border-color .15s, background-color .15s; cursor:pointer;
     }
@@ -56,19 +55,18 @@
     .almost6{background:var(--yellow)}
     .full7{background:var(--green)}
 
-    /* ===== Lista sotto (giorni con disponibilità) ===== */
+    /* ===== Lista sotto ===== */
     .dayitem{border:1px solid var(--border);border-radius:12px;padding:10px;margin:8px 0;background:#fff}
     .dayhead{display:flex;align-items:center;gap:8px;justify-content:space-between}
     .chips{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
     .chip{background:var(--chip);padding:4px 8px;border-radius:999px;font-size:13px}
-    .chip.me{border:2px solid var(--accent)}
     .chip button{margin-left:6px;background:transparent;border:none;color:#ef4444;font-weight:700;cursor:pointer}
 
     /* Popup */
     .popup{position:fixed;inset:0;background:rgba(0,0,0,.5);display:none;align-items:center;justify-content:center;z-index:100}
     .box{background:#fff;border:1px solid var(--border);border-radius:16px;padding:14px;width:92%;max-width:420px}
     .list{margin:6px 0;max-height:220px;overflow:auto;border:1px solid var(--border);border-radius:10px;background:#f9fafb;padding:8px}
-    .list .row{padding:6px;border-bottom:1px solid var(--border)}
+    .list .row{display:flex;justify-content:space-between;align-items:center;gap:8px;padding:6px;border-bottom:1px solid var(--border)}
     .list .row:last-child{border-bottom:none}
     .timebar{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
     .btns{display:flex;gap:8px;margin-top:10px;flex-wrap:wrap}
@@ -130,11 +128,11 @@
       </div>
       <div class="btns">
         <button id="confirmBtn">Conferma</button>
-        <button id="removeBtn"  class="danger">Cancella</button>
+        <button id="removeBtn"  class="danger">Cancella il mio</button>
         <button id="closeBtn"   class="ghost">Chiudi</button>
       </div>
       <div id="popupError" class="err"></div>
-      <div id="needName" class="muted" style="margin-top:6px;display:none">Per confermare/cancellare devi salvare il tuo nome.</div>
+      <div id="needName" class="muted" style="margin-top:6px;display:none">Per confermare/cancellare il tuo, salva prima il nome.</div>
     </div>
   </div>
 
@@ -192,6 +190,7 @@
     let currentM = new Date().getMonth()+1; // 1..12
     let monthData = new Map(); // YYYY-MM-DD -> { availability:{} }
     let currentYMD = null;
+    let daysListDelegationReady = false;
 
     // Helpers
     const pad2 = n => String(n).padStart(2,"0");
@@ -304,130 +303,24 @@
             const t = avail[k]||{};
             const shown = safeDisplay(t,k);
             const ff = t.from||'nd', tt = t.to||'nd';
-            const mine = savedName && (slugifyName(savedName)===k);
-            return `<span class="chip ${mine?'me':''}" data-key="${k}" data-day="${key}">${shown} (${ff}–${tt})${mine?' <button title="Rimuovi">×</button>':''}</span>`;
+            return `<span class="chip" data-key="${k}" data-day="${key}">
+                      ${shown} (${ff}–${tt})
+                      <button title="Elimina">×</button>
+                    </span>`;
           }).join('');
           items.push(`<div class="dayitem"><div class="dayhead"><div><b>${head}</b></div><div class="muted">${cnt} persone</div></div><div class="chips">${chips}</div></div>`);
         }
       }
       daysList.innerHTML = items.length ? items.join('') : 'Nessuna disponibilità registrata.';
 
-      // cancella dal chip (solo il mio)
-      daysList.querySelectorAll('.chip.me button').forEach(btn=>{
-        btn.addEventListener('click', async (ev)=>{
+      // Delegation per la X della lista (una sola volta)
+      if(!daysListDelegationReady){
+        daysList.addEventListener('click', async (ev)=>{
+          const btn = ev.target.closest('.chip button');
+          if(!btn) return;
           ev.stopPropagation();
-          const span = ev.currentTarget.closest('.chip');
-          await removeAvailability(span.dataset.day, span.dataset.key);
-        });
-      });
-    }
-
-    // Carica mese
-    async function loadMonth(){
-      buildGrid();
-      monthData.clear();
-      const start = `${currentY}-${pad2(currentM)}-01`;
-      const end   = `${currentY}-${pad2(currentM)}-31`;
-      const col   = collection(db, "rooms", room, "days");
-      const q     = query(col, where("date", ">=", start), where("date", "<=", end));
-      const snap  = await getDocs(q);
-      snap.forEach(docSnap=>{
-        const d = docSnap.data();
-        monthData.set(d.date, { date:d.date, availability: d.availability || {} });
-      });
-      renderCellsAndList();
-    }
-
-    // Popup
-    async function openDay(key){
-      currentYMD = key;
-      const [y,m,d] = key.split("-");
-      popupTitle.textContent = `Dettagli ${d}/${m}/${y}`;
-      popupError.style.display = "none";
-      needName.style.display = savedName ? "none" : "block";
-      confirmBtn.disabled = !savedName;
-      removeBtn.disabled  = !savedName;
-
-      const ref = doc(db, "rooms", room, "days", key);
-      const snap = await getDoc(ref);
-      let availability = {};
-      if(snap.exists()){
-        const data = snap.data();
-        availability = data.availability || {};
-        monthData.set(key, { date:key, availability });
-      } else {
-        monthData.set(key, { date:key, availability:{} });
-      }
-
-      namesList.innerHTML = "";
-      const entries = Object.entries(availability).sort((a,b)=>safeDisplay(a[1],a[0]).localeCompare(safeDisplay(b[1],b[0]),'it'));
-      if(entries.length===0){
-        namesList.innerHTML = `<div class="row">Nessuna disponibilità registrata.</div>`;
-      } else {
-        for(const [k,t] of entries){
-          const shown = safeDisplay(t,k);
-          const ff=t?.from||'nd', tt=t?.to||'nd';
-          const row = document.createElement('div');
-          row.className = 'row';
-          row.textContent = `${shown} (${ff}–${tt})`;
-          namesList.appendChild(row);
-        }
-      }
-
-      const myKey = slugifyName(savedName);
-      if(availability[myKey]){
-        fromInp.value = availability[myKey].from || "20:30";
-        toInp.value   = availability[myKey].to   || "23:30";
-      } else { fromInp.value = "20:30"; toInp.value = "23:30"; }
-
-      popup.style.display = "flex";
-    }
-    closeBtn.onclick = ()=> popup.style.display = "none";
-
-    confirmBtn.onclick = async ()=>{
-      if(!currentYMD || !savedName) return;
-      const f = (fromInp.value||'00:00').slice(0,5);
-      const t = (toInp.value  ||'23:59').slice(0,5);
-      const k = slugifyName(savedName);
-      try{
-        const ref = doc(db, "rooms", room, "days", currentYMD);
-        await setDoc(ref, { date: currentYMD, availability: { [k]: { display:savedName, from:f, to:t } } }, { merge:true });
-        const cur = monthData.get(currentYMD) || { date:currentYMD, availability:{} };
-        cur.availability = cur.availability || {};
-        cur.availability[k] = { display:savedName, from:f, to:t };
-        monthData.set(currentYMD, cur);
-        popup.style.display = "none";
-        renderCellsAndList();
-      }catch(e){
-        popupError.textContent = "Errore salvataggio: " + e.message;
-        popupError.style.display = "block";
-      }
-    };
-
-    removeBtn.onclick = async ()=>{
-      if(!currentYMD || !savedName) return;
-      const k = slugifyName(savedName);
-      await removeAvailability(currentYMD, k, true);
-    };
-
-    async function removeAvailability(dayKey, personKey, closePopup=false){
-      try{
-        const ref = doc(db, "rooms", room, "days", dayKey);
-        const s = await getDoc(ref);
-        if(!s.exists()){ await setDoc(ref, { date:dayKey, availability:{} }, { merge:true }); }
-        await updateDoc(ref, { [`availability.${personKey}`]: deleteField() });
-        const cur = monthData.get(dayKey) || { date:dayKey, availability:{} };
-        if(cur.availability) delete cur.availability[personKey];
-        monthData.set(dayKey, cur);
-        if(closePopup) popup.style.display = "none";
-        renderCellsAndList();
-      }catch(e){
-        alert("Errore cancellazione: " + e.message);
-      }
-    }
-
-    // Start
-    loadMonth();
-  </script>
-</body>
-</html>
+          const chip = btn.closest('.chip');
+          const day  = chip.dataset.day;
+          const key  = chip.dataset.key;
+          if(!confirm('Eliminare questa disponibilità?')) return;
+          await removeAvailability(day, key
