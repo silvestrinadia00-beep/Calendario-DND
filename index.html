@@ -8,291 +8,428 @@
     :root{
       --bg:#f8fafc; --fg:#0f172a; --muted:#64748b;
       --card:#ffffff; --accent:#4f46e5; --border:#e5e7eb; --ring:#818cf8;
-      --green:#bbf7d0; --yellow:#eaffad; --red:#ef4444;
+      --green:#bbf7d0; --yellow:#eaffad; --blue:#93c5fd; --red:#ef4444;
+      --chip:#e2e8f0;
     }
     *{box-sizing:border-box}
-    body{margin:0;background:var(--bg);color:var(--fg);font-family:system-ui,Segoe UI,Roboto,sans-serif;display:flex;flex-direction:column;align-items:center;padding:16px}
-    h1{font-size:1.4rem;margin:.5rem 0 0}
-    .subtitle{color:var(--muted);margin-bottom:1rem;font-size:.9rem}
+    body{
+      margin:0;background:var(--bg);color:var(--fg);
+      font-family:system-ui,Segoe UI,Roboto,sans-serif;
+      display:flex;flex-direction:column;align-items:center; padding:16px;
+    }
 
-    .card{background:var(--card);border-radius:1rem;padding:1rem;box-shadow:0 2px 6px rgba(0,0,0,.08);width:100%;max-width:420px;margin-bottom:1rem}
-    input,button{font:inherit;padding:.45rem .65rem;border-radius:.6rem;border:1px solid var(--border)}
-    button{background:var(--accent);color:#fff;cursor:pointer;border:none;font-weight:600}
-    button:hover{background:#4338ca}
-    button:disabled{background:var(--muted);cursor:not-allowed}
-    .name-input{display:flex;gap:.5rem}
-    .name-input input{flex:1}
-    .okmsg{margin-top:.5rem;font-size:.85rem;color:#16a34a;display:none}
+    /* ============ Header ============ */
+    .logo{display:flex;justify-content:center;margin:4px 0 10px}
+    .logo img{max-width:320px;height:auto;display:block}
 
-    .calendar{width:100%}
-    .calendar.disabled{opacity:.5;pointer-events:none}
+    h1{font-size:clamp(22px,3.5vw,28px);margin:6px 0 2px}
+    .muted{color:var(--muted)}
 
-    .weeknames,.grid{display:grid;grid-template-columns:repeat(7,1fr)}
-    .weeknames{font-weight:600;text-align:center;color:var(--muted);margin-bottom:4px}
-    .cell{border:1px solid var(--border);margin:2px;border-radius:.8rem;min-height:68px;padding:6px;font-size:.85rem;position:relative;background:#fff;display:flex;flex-direction:column;align-items:flex-start;justify-content:flex-start}
+    /* ============ Cards & Controls ============ */
+    .card{background:var(--card);border-radius:16px;padding:12px;
+      box-shadow:0 2px 8px rgba(0,0,0,.06);border:1px solid var(--border);
+      width:100%;max-width:980px;margin-bottom:12px}
+
+    .row{display:flex;gap:8px;flex-wrap:wrap;align-items:center;justify-content:space-between}
+    input,select,button{
+      font:inherit;padding:8px 10px;border-radius:12px;border:1px solid var(--border);background:#fff
+    }
+    button{background:var(--accent);color:#fff;border:none;font-weight:600;cursor:pointer}
+    button.ghost{background:#fff;color:var(--fg);border:1px solid var(--border)}
+    button:disabled{opacity:.6;cursor:not-allowed}
+    .namebar{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+    .namebar input{min-width:220px;flex:1}
+
+    /* ============ Calendar Grid ============ */
+    .toolbar{display:flex;gap:8px;align-items:center;justify-content:center}
+    .weeknames{display:grid;grid-template-columns:repeat(7,1fr);text-align:center;
+      color:var(--muted);font-weight:600;margin:8px 0 6px}
+    .grid{display:grid;grid-template-columns:repeat(7,1fr);gap:6px}
+
+    /* Cella con layout VERTICALE (titolo in alto, nomi in colonna) */
+    .cell{
+      background:#fff;border:1px solid var(--border);border-radius:14px;min-height:120px;
+      padding:8px;display:flex;flex-direction:column;gap:6px;
+      transition:box-shadow .15s,border-color .15s, background-color .15s;
+    }
     .cell.clickable{cursor:pointer}
-    .cell .daynum{font-weight:700}
-    .cell .count{font-size:.7rem;margin-top:auto;align-self:flex-end;background:#fff;border:1px solid var(--border);border-radius:999px;padding:2px 6px;line-height:1}
+    .cell:hover{box-shadow:0 2px 10px rgba(0,0,0,.06)}
+    .cell .top{display:flex;align-items:center;justify-content:space-between}
+    .cell .daynum{font-weight:800}
+    .count{font-size:11px;background:#fff;border:1px solid var(--border);border-radius:999px;padding:2px 6px}
+
+    /* lista nomi in verticale */
+    .names{display:flex;flex-direction:column;gap:4px;overflow:auto}
+    .tag{display:inline-block;background:var(--chip);border-radius:8px;padding:3px 8px;font-size:13px;color:#1f2937;white-space:nowrap}
+
+    /* Stati */
     .cell.full7{background:var(--green)}
     .cell.almost6{background:var(--yellow)}
-    @media (max-width:560px){ .cell{min-height:110px} }
+    .cell.hasAny{border-color:var(--blue); box-shadow:0 0 0 2px rgba(147,197,253,.3) inset} /* cornice celeste */
 
-    /* Popup */
+    /* Responsiveness: griglia a 3 colonne su mobile, poi 2 molto stretto */
+    @media (max-width:860px){ .cell{min-height:130px} }
+    @media (max-width:700px){
+      .grid{grid-template-columns:repeat(3,1fr)}
+      .cell{min-height:140px}
+    }
+    @media (max-width:460px){
+      .grid{grid-template-columns:repeat(2,1fr)}
+      .cell{min-height:150px}
+    }
+
+    /* ============ Popup ============ */
     .popup{position:fixed;inset:0;background:rgba(0,0,0,.5);display:none;align-items:center;justify-content:center;z-index:100}
-    .popup .box{background:#fff;border-radius:1rem;padding:1rem;width:92%;max-width:420px}
-    .list{margin:.5rem 0;max-height:220px;overflow:auto;font-size:.95rem;border:1px solid var(--border);border-radius:.5rem;padding:.5rem;background:#f9fafb}
-    .list .row{padding:4px 6px;border-bottom:1px solid var(--border)}
+    .box{background:#fff;border-radius:16px;padding:14px;width:92%;max-width:460px;border:1px solid var(--border)}
+    .list{margin:6px 0;max-height:260px;overflow:auto;border:1px solid var(--border);border-radius:10px;background:#f9fafb;padding:8px}
+    .list .row{padding:6px;border-bottom:1px solid var(--border)}
     .list .row:last-child{border-bottom:none}
-    .timebar{display:flex;gap:.5rem;align-items:center;flex-wrap:wrap}
-    .btns{display:flex;gap:.5rem;margin-top:1rem;flex-wrap:wrap}
+    .timebar{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+    .btns{display:flex;gap:8px;margin-top:10px;flex-wrap:wrap}
     .danger{background:var(--red)}
+    .err{color:#b91c1c;margin-top:6px;display:none}
   </style>
 </head>
 <body>
-  <h1>Calendario disponibilità D&D</h1>
-  <div id="monthYear" class="subtitle"></div>
-
-  <div class="card">
-    <label for="nome">Il tuo nome:</label>
-    <div class="name-input">
-      <input id="nome" placeholder="Scrivi il tuo nome">
-      <button id="saveNameBtn">Salva</button>
-    </div>
-    <div id="okName" class="okmsg">Nome salvato! Ora puoi toccare un giorno.</div>
+  <!-- LOGO -->
+  <div class="logo">
+    <img src="Dungeons-and-Dragons-logo.png" alt="Dungeons & Dragons Logo">
   </div>
 
-  <div class="card calendar disabled" id="calendar">
+  <h1>Calendario disponibilità D&D</h1>
+
+  <!-- Nome -->
+  <div class="card" style="max-width:560px">
+    <div class="namebar">
+      <label for="nome"><b>Nome</b></label>
+      <input id="nome" placeholder="Scrivi il tuo nome">
+      <button id="saveNameBtn">Salva</button>
+      <span id="okName" class="muted" style="display:none">Nome salvato ✔︎</span>
+    </div>
+  </div>
+
+  <!-- Calendario -->
+  <div class="card" id="calendar" style="opacity:.6;pointer-events:none">
+    <div class="row" style="justify-content:center">
+      <div class="toolbar">
+        <button id="prevYear"  class="ghost">«</button>
+        <button id="prevMonth" class="ghost">‹</button>
+        <select id="monthSel"></select>
+        <select id="yearSel"></select>
+        <button id="nextMonth" class="ghost">›</button>
+        <button id="nextYear"  class="ghost">»</button>
+      </div>
+    </div>
+
     <div class="weeknames">
       <div>Lun</div><div>Mar</div><div>Mer</div><div>Gio</div><div>Ven</div><div>Sab</div><div>Dom</div>
     </div>
     <div class="grid" id="grid"></div>
   </div>
 
-  <!-- Popup giorno -->
+  <!-- Popup -->
   <div class="popup" id="popup">
     <div class="box">
-      <h3 id="popupTitle">Dettagli giorno</h3>
+      <h3 id="popupTitle" style="margin:0 0 8px 0">Dettagli giorno</h3>
       <div class="list" id="namesList"></div>
       <div class="timebar">
-        <label>Dalle <input id="from" type="time"></label>
-        <label>Alle <input id="to" type="time"></label>
+        <label>Dalle <input id="from" type="time" value="20:30"></label>
+        <label>Alle <input id="to" type="time" value="23:30"></label>
       </div>
       <div class="btns">
         <button id="confirmBtn">Conferma</button>
-        <button id="removeBtn" class="danger">Cancella</button>
-        <button id="closeBtn" style="background:#6b7280">Chiudi</button>
+        <button id="removeBtn"  class="danger">Cancella</button>
+        <button id="closeBtn"   class="ghost">Chiudi</button>
       </div>
-      <div id="popupError" style="color:#b91c1c;margin-top:.5rem;display:none"></div>
+      <div id="popupError" class="err"></div>
     </div>
   </div>
 
+  <!-- Firebase + App -->
   <script type="module">
-    // --- Firebase modular SDK ---
+    // Firebase (modular)
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.13.1/firebase-app.js";
     import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.13.1/firebase-auth.js";
     import {
       getFirestore, doc, getDoc, setDoc, updateDoc, deleteField,
-      collection
+      collection, query, where, getDocs
     } from "https://www.gstatic.com/firebasejs/10.13.1/firebase-firestore.js";
 
-    // CONFIG (uguale alla tua)
     const firebaseConfig = {
       apiKey: "AIzaSyCLe8BSPpF3j5MSoi_6lsXL6RFT8vUVFWk",
       authDomain: "calendario-dnd.firebaseapp.com",
       projectId: "calendario-dnd",
     };
 
-    // Init
     const app = initializeApp(firebaseConfig);
     const auth = getAuth(app);
-    const db = getFirestore(app);
+    const db   = getFirestore(app);
 
-    // UI refs
+    // ==== UI refs
     const nomeInput = document.getElementById("nome");
     const saveNameBtn = document.getElementById("saveNameBtn");
     const okName = document.getElementById("okName");
-
-    const calendar = document.getElementById("calendar");
+    const calendarCard = document.getElementById("calendar");
     const grid = document.getElementById("grid");
-    const monthYearDisplay = document.getElementById("monthYear");
+    const monthSel = document.getElementById("monthSel");
+    const yearSel  = document.getElementById("yearSel");
+    const prevMonthBtn = document.getElementById("prevMonth");
+    const nextMonthBtn = document.getElementById("nextMonth");
+    const prevYearBtn  = document.getElementById("prevYear");
+    const nextYearBtn  = document.getElementById("nextYear");
 
     const popup = document.getElementById("popup");
     const popupTitle = document.getElementById("popupTitle");
     const namesList = document.getElementById("namesList");
     const fromInp = document.getElementById("from");
-    const toInp = document.getElementById("to");
+    const toInp   = document.getElementById("to");
     const confirmBtn = document.getElementById("confirmBtn");
-    const removeBtn = document.getElementById("removeBtn");
-    const closeBtn = document.getElementById("closeBtn");
+    const removeBtn  = document.getElementById("removeBtn");
+    const closeBtn   = document.getElementById("closeBtn");
     const popupError = document.getElementById("popupError");
 
-    // Stato
-    const room = "dnd"; // stanza fissa
+    // ==== State
+    const room = "dnd"; // fisso
     let savedName = "";
-    let currentYMD = null;
     let authed = false;
+    let currentY = new Date().getFullYear();
+    let currentM = new Date().getMonth()+1; // 1..12
+    let monthData = new Map(); // key YYYY-MM-DD -> { availability:{} }
+    let currentYMD = null;
 
-    // Helpers
+    // ==== Helpers
     const pad2 = n => String(n).padStart(2,"0");
-    const ymd = (y,m,d) => `${y}-${pad2(m)}-${pad2(d)}`;
+    const ymd  = (y,m,d) => `${y}-${pad2(m)}-${pad2(d)}`;
+    const dim  = (y,m) => new Date(y, m, 0).getDate(); // m=1..12
+    const firstDowMon0 = (y,m) => (new Date(y, m-1, 1).getDay() + 6) % 7; // Mon=0..Sun=6
+    const IT_MONTHS = ["Gennaio","Febbraio","Marzo","Aprile","Maggio","Giugno","Luglio","Agosto","Settembre","Ottobre","Novembre","Dicembre"];
 
-    // Mese corrente
-    const today = new Date();
-    const year = today.getFullYear();
-    const month = today.getMonth()+1; // 1..12
-    const monthNames = ["Gennaio","Febbraio","Marzo","Aprile","Maggio","Giugno","Luglio","Agosto","Settembre","Ottobre","Novembre","Dicembre"];
-    monthYearDisplay.textContent = `${monthNames[month-1]} ${year}`;
+    // Fill selectors
+    function fillSelectors(){
+      monthSel.innerHTML = IT_MONTHS.map((n,i)=>`<option value="${i+1}">${n}</option>`).join('');
+      yearSel.innerHTML  = Array.from({length:9},(_,k)=> (currentY-4+k))
+        .map(y=>`<option value="${y}">${y}</option>`).join('');
+      monthSel.value = String(currentM);
+      yearSel.value  = String(currentY);
+    }
+    fillSelectors();
 
-    // Calcola offset per settimane (settimana inizia lunedì)
-    const jsFirst = new Date(year, month-1, 1).getDay(); // 0=Dom .. 6=Sab
-    const startOffset = (jsFirst + 6) % 7;
-    const dim = new Date(year, month, 0).getDate();
-
-    // Popola griglia
-    function populateCalendar(){
-      grid.innerHTML = "";
-      for(let i=0;i<startOffset;i++){ const ghost=document.createElement("div"); grid.appendChild(ghost); }
-      for(let d=1; d<=dim; d++){
-        const cell = document.createElement("div");
-        cell.className = "cell";
-        cell.dataset.ymd = ymd(year, month, d);
-        cell.innerHTML = `<span class="daynum">${d}</span><div class="count"></div>`;
-        grid.appendChild(cell);
+    // Enable when auth+name ready
+    function maybeEnableCalendar(){
+      if(authed && savedName){
+        calendarCard.style.opacity = "1";
+        calendarCard.style.pointerEvents = "auto";
       }
     }
-    populateCalendar();
 
-    // Delegazione click celle
-    grid.addEventListener("click", async (e)=>{
-      const cell = e.target.closest(".cell");
-      if(!cell || !authed || !savedName) return;
-      await openDay(cell.dataset.ymd);
+    // Auth anonima
+    onAuthStateChanged(auth, (user)=>{
+      authed = !!user;
+      maybeEnableCalendar();
     });
+    signInAnonymously(auth).catch(e=>alert("Errore auth anonima: " + e.message));
 
-    // Salvataggio nome
+    // Salva nome
     saveNameBtn.addEventListener("click", ()=>{
       const n = nomeInput.value.trim();
       if(!n){ alert("Inserisci un nome valido."); return; }
       savedName = n;
       nomeInput.disabled = true;
       saveNameBtn.disabled = true;
-      okName.style.display = "block";
-      if(authed) calendar.classList.remove("disabled");
-      render(); // aggiorna contatori/colori
+      okName.style.display = "inline";
+      maybeEnableCalendar();
+      loadMonth(); // forza il primo caricamento
     });
 
-    // Auth anonima (necessaria per le tue regole)
-    onAuthStateChanged(auth, (user)=>{
-      authed = !!user;
-      if(user){
-        if(savedName) calendar.classList.remove("disabled");
-      } else {
-        calendar.classList.add("disabled");
+    // Nav mese/anno
+    function navMonth(delta){
+      let m = Number(monthSel.value), y = Number(yearSel.value);
+      m += delta;
+      if(m<1){ m=12; y--; }
+      if(m>12){ m=1; y++; }
+      monthSel.value = m; yearSel.value = y;
+      onMonthChange();
+    }
+    prevMonthBtn.onclick = ()=> navMonth(-1);
+    nextMonthBtn.onclick = ()=> navMonth(+1);
+    prevYearBtn.onclick  = ()=> { yearSel.value = Number(yearSel.value)-1; onMonthChange(); };
+    nextYearBtn.onclick  = ()=> { yearSel.value = Number(yearSel.value)+1; onMonthChange(); };
+    monthSel.onchange = yearSel.onchange = onMonthChange;
+
+    function onMonthChange(){
+      currentM = Number(monthSel.value);
+      currentY = Number(yearSel.value);
+      loadMonth();
+    }
+
+    // Costruisci griglia per mese corrente
+    function buildGrid(){
+      grid.innerHTML = "";
+      const offset = firstDowMon0(currentY,currentM);
+      for(let i=0;i<offset;i++){ const ghost=document.createElement("div"); grid.appendChild(ghost); }
+      const days = dim(currentY,currentM);
+      for(let d=1; d<=days; d++){
+        const key = ymd(currentY,currentM,d);
+        const cell = document.createElement("div");
+        cell.className = "cell clickable";
+        cell.dataset.key = key;
+        cell.innerHTML = `
+          <div class="top">
+            <span class="daynum">${d}</span>
+            <span class="count"></span>
+          </div>
+          <div class="names"></div>
+        `;
+        cell.addEventListener("click", ()=> openDay(key));
+        grid.appendChild(cell);
       }
-    });
-    // Avvia login anonimo
-    signInAnonymously(auth).catch(err=>{
-      console.error("Auth error:", err);
-      alert("Errore di autenticazione anonima: " + err.message);
-    });
+    }
 
-    // Firestore refs (path conforme alle regole: rooms/{room}/days/{day})
-    const daysCol = collection(db, "rooms", room, "days");
+    // Rende contenuto celle (count, elenco, colori, cornice celeste)
+    function renderCells(){
+      const days = dim(currentY,currentM);
+      for(let d=1; d<=days; d++){
+        const key = ymd(currentY,currentM,d);
+        const cell = grid.querySelector(`.cell[data-key="${key}"]`);
+        if(!cell) continue;
+        const data = monthData.get(key) || { availability:{} };
+        const avail = data.availability || {};
+        const names = Object.keys(avail).sort((a,b)=>a.localeCompare(b,'it'));
+        const cnt = names.length;
 
-    async function openDay(ymdKey){
+        const countEl = cell.querySelector('.count');
+        countEl.textContent = cnt ? cnt : '';
+        const namesEl = cell.querySelector('.names');
+        namesEl.innerHTML = '';
+        // mostriamo tutti i nomi, in colonna, con orario
+        names.forEach(n=>{
+          const t = avail[n]||{};
+          const chip = document.createElement('div');
+          chip.className='tag';
+          const ff = t.from ? t.from : 'nd';
+          const tt = t.to   ? t.to   : 'nd';
+          chip.textContent = `${n} (${ff}–${tt})`;
+          namesEl.appendChild(chip);
+        });
+
+        cell.classList.remove('full7','almost6','hasAny');
+        if(cnt >= 7) cell.classList.add('full7');
+        else if(cnt === 6) cell.classList.add('almost6');
+        if(cnt > 0) cell.classList.add('hasAny'); // cornice celeste
+      }
+    }
+
+    // Carica il mese corrente da Firestore
+    async function loadMonth(){
+      if(!authed) return; // aspetta auth
+      buildGrid();
+      monthData.clear();
+      const start = `${currentY}-${pad2(currentM)}-01`;
+      const end   = `${currentY}-${pad2(currentM)}-31`;
+      const col   = collection(db, "rooms", room, "days");
+      const q     = query(col, where("date", ">=", start), where("date", "<=", end));
+      const snap  = await getDocs(q);
+      snap.forEach(docSnap=>{
+        const d = docSnap.data();
+        monthData.set(d.date, {
+          date: d.date,
+          availability: d.availability || {}
+        });
+      });
+      renderCells();
+    }
+
+    // Popup apertura giorno: mostra elenco completo e precompila i tuoi orari
+    async function openDay(key){
+      if(!savedName){ alert("Prima salva il tuo nome."); return; }
+      currentYMD = key;
+      const [y,m,d] = key.split("-");
+      popupTitle.textContent = `Dettagli ${d}/${m}/${y}`;
       popupError.style.display = "none";
-      currentYMD = ymdKey;
-      const [y, m, d] = ymdKey.split("-");
-      popupTitle.textContent = `Dettagli giorno ${d} ${monthNames[Number(m)-1]} ${y}`;
-      fromInp.value = ""; toInp.value = "";
-      // Carica documento
-      const ref = doc(daysCol, ymdKey);
-      const snap = await getDoc(ref);
-      const data = snap.exists() ? snap.data() : {};
-      const availability = (data && data.availability) ? data.availability : {};
+      fromInp.value = "20:30"; toInp.value = "23:30";
 
-      // Lista nomi+orari
+      // assicura dati aggiornati per quel giorno
+      const docRef = doc(db, "rooms", room, "days", key);
+      const snap = await getDoc(docRef);
+      let availability = {};
+      if(snap.exists()){
+        const data = snap.data();
+        availability = data.availability || {};
+        monthData.set(key, { date:key, availability });
+      } else {
+        monthData.set(key, { date:key, availability:{} });
+      }
+
+      // lista completa
+      namesList.innerHTML = "";
       const entries = Object.entries(availability).sort((a,b)=>a[0].localeCompare(b[0],'it'));
-      namesList.innerHTML = entries.length ? "" : "<div class='row'>Nessuna disponibilità registrata.</div>";
-      for(const [name, t] of entries){
-        const line = document.createElement("div");
-        const from = (t && t.from) ? t.from : "nd";
-        const to   = (t && t.to)   ? t.to   : "nd";
-        line.className = "row";
-        line.textContent = `${name} (${from}–${to})`;
-        namesList.appendChild(line);
+      if(entries.length===0){
+        namesList.innerHTML = `<div class="row">Nessuna disponibilità registrata.</div>`;
+      }else{
+        for(const [n,t] of entries){
+          const ff = t?.from || 'nd';
+          const tt = t?.to   || 'nd';
+          const row = document.createElement('div');
+          row.className='row';
+          row.textContent = `${n} (${ff}–${tt})`;
+          namesList.appendChild(row);
+        }
       }
-      // Precompila se io già presente
+
+      // se io ho già orari, precompila
       if(availability[savedName]){
-        fromInp.value = availability[savedName].from || "";
-        toInp.value   = availability[savedName].to   || "";
+        fromInp.value = availability[savedName].from || fromInp.value;
+        toInp.value   = availability[savedName].to   || toInp.value;
       }
+
       popup.style.display = "flex";
     }
 
-    closeBtn.addEventListener("click", ()=> popup.style.display = "none");
+    closeBtn.onclick = ()=> popup.style.display = "none";
 
-    confirmBtn.addEventListener("click", async ()=>{
-      if(!currentYMD || !savedName) return;
-      const f = fromInp.value || "00:00";
-      const t = toInp.value   || "23:59";
+    confirmBtn.onclick = async ()=>{
+      if(!currentYMD) return;
+      const f = (fromInp.value||'00:00').slice(0,5);
+      const t = (toInp.value  ||'23:59').slice(0,5);
       try{
-        const ref = doc(daysCol, currentYMD);
+        const ref = doc(db, "rooms", room, "days", currentYMD);
         await setDoc(ref, {
           date: currentYMD,
-          availability: { [savedName]: { from: f, to: t } }
-        }, { merge: true });
-        popup.style.display = "none";
-        await render();
-      }catch(err){
-        popupError.textContent = "Errore salvataggio: " + err.message;
+          [`availability.${savedName}`]: { from: f, to: t }
+        }, { merge:true });
+        // aggiorna cache e UI
+        const cur = monthData.get(currentYMD) || { date:currentYMD, availability:{} };
+        cur.availability = cur.availability || {};
+        cur.availability[savedName] = { from:f, to:t };
+        monthData.set(currentYMD, cur);
+        popup.style.display="none";
+        renderCells();
+      }catch(e){
+        popupError.textContent = "Errore salvataggio: " + e.message;
         popupError.style.display = "block";
       }
-    });
+    };
 
-    removeBtn.addEventListener("click", async ()=>{
-      if(!currentYMD || !savedName) return;
+    removeBtn.onclick = async ()=>{
+      if(!currentYMD) return;
       try{
-        const ref = doc(daysCol, currentYMD);
+        const ref = doc(db, "rooms", room, "days", currentYMD);
         await updateDoc(ref, { [`availability.${savedName}`]: deleteField() });
-        popup.style.display = "none";
-        await render();
-      }catch(err){
-        // se il doc non esiste ancora, ignora
-        if(err.code !== "not-found"){
-          popupError.textContent = "Errore cancellazione: " + err.message;
-          popupError.style.display = "block";
-        } else {
-          popup.style.display = "none";
-          await render();
-        }
+        const cur = monthData.get(currentYMD) || { date:currentYMD, availability:{} };
+        if(cur.availability) delete cur.availability[savedName];
+        monthData.set(currentYMD, cur);
+        popup.style.display="none";
+        renderCells();
+      }catch(e){
+        // se doc non esiste, è equivalente a rimosso
+        popup.style.display="none";
+        renderCells();
       }
-    });
+    };
 
-    async function render(){
-      // Aggiorna contatori e colori per tutti i giorni del mese
-      const cells = grid.querySelectorAll(".cell");
-      for(const cell of cells){
-        const key = cell.dataset.ymd;
-        const ref = doc(daysCol, key);
-        const snap = await getDoc(ref);
-        let count = 0;
-        if(snap.exists()){
-          const data = snap.data();
-          const availability = (data && data.availability) ? data.availability : {};
-          count = Object.keys(availability).length;
-        }
-        const badge = cell.querySelector(".count");
-        badge.textContent = count ? count : "";
-        cell.classList.remove("full7","almost6","clickable");
-        if(authed && savedName) cell.classList.add("clickable");
-        if(count >= 7) cell.classList.add("full7");
-        else if(count === 6) cell.classList.add("almost6");
-      }
-    }
-
-    // primo render (contatori vuoti finché non c’è auth+nome)
-    render();
+    // Primo caricamento
+    loadMonth();
   </script>
 </body>
 </html>
+
