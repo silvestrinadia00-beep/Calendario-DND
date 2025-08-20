@@ -258,27 +258,43 @@
     }
 
     // Build grid
-    function buildGrid(){
-      grid.innerHTML = "";
-      const offset = firstDowMon0(currentY,currentM);
-      for(let i=0;i<offset;i++){ const ghost=document.createElement("div"); grid.appendChild(ghost); }
-      const days = dim(currentY,currentM);
-      for(let d=1; d<=days; d++){
-        const key = ymd(currentY,currentM,d);
-        const cell = document.createElement("div");
-        cell.className = "cell clickable";
-        cell.dataset.key = key;
-        cell.innerHTML = `
-          <div class="top">
-            <span class="daynum">${d}</span>
-            <span class="count"></span>
-          </div>
-          <div class="names"></div>
-        `;
-        cell.addEventListener("click", ()=> openDay(key));
-        grid.appendChild(cell);
-      }
-    }
+function buildGrid(){
+  grid.innerHTML = "";
+  const offset = firstDowMon0(currentY,currentM); // lun=0..dom=6
+
+  // Celle fantasma all'inizio
+  for (let i = 0; i < offset; i++) {
+    const ghost = document.createElement("div");
+    ghost.className = "cell ghost";
+    ghost.innerHTML = `
+      <div class="top">
+        <span class="daynum"></span>
+        <span class="count"></span>
+      </div>
+      <div class="names"></div>
+    `;
+    grid.appendChild(ghost);
+  }
+
+  // Giorni reali
+  const days = dim(currentY,currentM);
+  for (let d = 1; d <= days; d++) {
+    const key = ymd(currentY,currentM,d);
+    const cell = document.createElement("div");
+    cell.className = "cell clickable";
+    cell.dataset.key = key;
+    cell.innerHTML = `
+      <div class="top">
+        <span class="daynum">${d}</span>
+        <span class="count"></span>
+      </div>
+      <div class="names"></div>
+    `;
+    cell.addEventListener("click", ()=> openDay(key));
+    grid.appendChild(cell);
+  }
+}
+
 
     // Render celle
     function renderCells(){
