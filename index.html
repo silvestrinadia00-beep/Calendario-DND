@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="it">
 <head>
@@ -323,4 +324,132 @@
           const day  = chip.dataset.day;
           const key  = chip.dataset.key;
           if(!confirm('Eliminare questa disponibilità?')) return;
-          await removeAvailability(day, key
+          await removeAvailability(day, key);
+        });
+        daysListDelegationReady = true;
+      }
+    }
+
+    // Carica mese
+    async function loadMonth(){
+      buildGrid();
+      monthData.clear();
+      const start = `${currentY}-${pad2(currentM)}-01`;
+      const end   = `${currentY}-${pad2(currentM)}-31`;
+      const col   = collection(db, "rooms", room, "days");
+      const q     = query(col, where("date", ">=", start), where("date", "<=", end));
+      const snap  = await getDocs(q);
+      snap.forEach(docSnap=>{
+        const d = docSnap.data();
+        monthData.set(d.date, { date:d.date, availability: d.availability || {} });
+      });
+      renderCellsAndList();
+    }
+
+    // Popup
+    async function openDay(key){
+      currentYMD = key;
+      const [y,m,d] = key.split("-");
+      popupTitle.textContent = `Dettagli ${d}/${m}/${y}`;
+      popupError.style.display = "none";
+      needName.style.display = savedName ? "none" : "block";
+      confirmBtn.disabled = !savedName;
+      removeBtn.disabled  = !savedName;
+
+      const ref = doc(db, "rooms", room, "days", key);
+      const snap = await getDoc(ref);
+      let availability = {};
+      if(snap.exists()){
+        const data = snap.data();
+        availability = data.availability || {};
+        monthData.set(key, { date:key, availability });
+      } else {
+        monthData.set(key, { date:key, availability:{} });
+      }
+
+      // lista nel popup con X sempre
+      namesList.innerHTML = "";
+      const entries = Object.entries(availability).sort((a,b)=>safeDisplay(a[1],a[0]).localeCompare(safeDisplay(b[1],b[0]),'it'));
+      if(entries.length===0){
+        namesList.innerHTML = `<div class="row"><span>Nessuna disponibilità registrata.</span></div>`;
+      } else {
+        for(const [k,t] of entries){
+          const shown = safeDisplay(t,k);
+          const ff=t?.from||'nd', tt=t?.to||'nd';
+          const row = document.createElement('div');
+          row.className = 'row';
+          row.innerHTML = `<span>${shown} (${ff}–${tt})</span>
+                           <button class="ghost" data-key="${k}" data-day="${key}">×</button>`;
+          namesList.appendChild(row);
+        }
+      }
+
+      // click X nel popup
+      namesList.onclick = async (e)=>{
+        const btn = e.target.closest('button[data-key]');
+        if(!btn) return;
+        const day = btn.getAttribute('data-day');
+        const k   = btn.getAttribute('data-key');
+        if(!confirm('Eliminare questa disponibilità?')) return;
+        await removeAvailability(day, k, false); // non chiudo
+        openDay(day); // ricarico lista
+      };
+
+      // precompila miei orari
+      const myKey = slugifyName(savedName);
+      if(availability[myKey]){
+        fromInp.value = availability[myKey].from || "20:30";
+        toInp.value   = availability[myKey].to   || "23:30";
+      } else { fromInp.value = "20:30"; toInp.value = "23:30"; }
+
+      popup.style.display = "flex";
+    }
+    closeBtn.onclick = ()=> popup.style.display = "none";
+
+    confirmBtn.onclick = async ()=>{
+      if(!currentYMD || !savedName) return;
+      const f = (fromInp.value||'00:00').slice(0,5);
+      const t = (toInp.value  ||'23:59').slice(0,5);
+      const k = slugifyName(savedName);
+      try{
+        const ref = doc(db, "rooms", room, "days", currentYMD);
+        await setDoc(ref, { date: currentYMD, availability: { [k]: { display:savedName, from:f, to:t } } }, { merge:true });
+        const cur = monthData.get(currentYMD) || { date:currentYMD, availability:{} };
+        cur.availability = cur.availability || {};
+        cur.availability[k] = { display:savedName, from:f, to:t };
+        monthData.set(currentYMD, cur);
+        popup.style.display = "none";
+        renderCellsAndList();
+      }catch(e){
+        popupError.textContent = "Errore salvataggio: " + e.message;
+        popupError.style.display = "block";
+      }
+    };
+
+    removeBtn.onclick = async ()=>{
+      if(!currentYMD || !savedName) return;
+      const k = slugifyName(savedName);
+      await removeAvailability(currentYMD, k, true);
+    };
+
+    async function removeAvailability(dayKey, personKey, closePopup=false){
+      try{
+        const ref = doc(db, "rooms", room, "days", dayKey);
+        const s = await getDoc(ref);
+        if(!s.exists()){ await setDoc(ref, { date:dayKey, availability:{} }, { merge:true }); }
+        await updateDoc(ref, { [`availability.${personKey}`]: deleteField() });
+        const cur = monthData.get(dayKey) || { date:dayKey, availability:{} };
+        if(cur.availability) delete cur.availability[personKey];
+        monthData.set(dayKey, cur);
+        if(closePopup) popup.style.display = "none";
+        renderCellsAndList();
+      }catch(e){
+        alert("Errore cancellazione: " + e.message);
+      }
+    }
+
+    // Start
+    loadMonth();
+  </script>
+</body>
+</html>
