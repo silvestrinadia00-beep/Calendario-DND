@@ -78,6 +78,21 @@
     .btns{display:flex;gap:8px;margin-top:10px;flex-wrap:wrap}
     .danger{background:var(--red)}
     .err{color:#b91c1c;margin-top:6px;display:none}
+    /* Celle fantasma per allineare la prima settimana */
+.cell.ghost{
+  visibility: hidden;      /* resta in griglia ma invisibile */
+  border: none;
+  background: transparent;
+  box-shadow: none;
+  pointer-events: none;
+}
+
+/* Assicura colonne identiche */
+.weeknames, .grid{
+  display:grid;
+  grid-template-columns: repeat(7, minmax(0,1fr));
+}
+
   </style>
 </head>
 <body>
