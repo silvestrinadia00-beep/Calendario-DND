@@ -112,15 +112,18 @@
       font-size: 0.8rem;
       position: relative;
       background: white;
-      cursor: pointer;
       display: flex;
       flex-direction: column;
       align-items: center;
       justify-content: flex-start;
       transition: background-color 0.2s;
     }
-    
-    .cell:hover {
+
+    .cell.clickable {
+        cursor: pointer;
+    }
+
+    .cell.clickable:hover {
         background-color: var(--border);
     }
 
@@ -178,6 +181,12 @@
       padding: 2px 4px;
       border-bottom: 1px solid var(--border);
     }
+
+    .confirmation-msg {
+      margin-top: 0.5rem;
+      font-size: 0.8rem;
+      color: var(--green);
+    }
   </style>
 </head>
 <body>
@@ -189,6 +198,7 @@
       <input id="nome" placeholder="Scrivi il tuo nome">
       <button id="saveNameBtn">Salva</button>
     </div>
+    <div id="nameConfirmation" class="confirmation-msg" style="display:none;">Nome salvato! Ora puoi cliccare su un giorno.</div>
   </div>
 
   <div class="card calendar disabled" id="calendar">
@@ -239,28 +249,46 @@
     const btnConfirm = document.getElementById("confirm");
     const btnRemove = document.getElementById("remove");
     const btnClose = document.getElementById("close");
+    const nameConfirmation = document.getElementById("nameConfirmation");
 
     let savedName = "";
     let currentDay = null;
     const room = "dnd";
 
-    // Costruisci mese attuale
+    // Costruisci il mese attuale
     const today = new Date();
     const year = today.getFullYear();
     const month = today.getMonth();
     const firstDay = new Date(year, month, 1).getDay() || 7;
     const daysInMonth = new Date(year, month + 1, 0).getDate();
 
-    for (let i = 1; i < firstDay; i++) {
-      let d = document.createElement("div");
-      grid.appendChild(d);
+    // Popola la griglia del calendario
+    function populateCalendar() {
+        grid.innerHTML = ""; // Pulisce il calendario
+        for (let i = 1; i < firstDay; i++) {
+            let d = document.createElement("div");
+            grid.appendChild(d);
+        }
+        for (let d = 1; d <= daysInMonth; d++) {
+            let cell = document.createElement("div");
+            cell.className = "cell";
+            cell.dataset.day = d;
+            cell.innerHTML = "<span class='daynum'>" + d + "</span><div class='count'></div>";
+            grid.appendChild(cell);
+        }
     }
-    for (let d = 1; d <= daysInMonth; d++) {
-      let cell = document.createElement("div");
-      cell.className = "cell";
-      cell.innerHTML = "<span class='daynum'>" + d + "</span><div class='count'></div>";
-      cell.onclick = () => openDay(d);
-      grid.appendChild(cell);
+    populateCalendar();
+
+    // Funzione per inizializzare i listener sulle celle del calendario
+    function initCalendarListeners() {
+      const cells = grid.querySelectorAll(".cell");
+      cells.forEach(cell => {
+        const day = cell.dataset.day;
+        if (day) { // Assicura che la cella rappresenti un giorno
+            cell.classList.add('clickable');
+            cell.onclick = () => openDay(day);
+        }
+      });
     }
 
     // Gestione del salvataggio del nome
@@ -269,10 +297,11 @@
       if (name) {
         savedName = name;
         nomeInput.disabled = true;
-        saveNameBtn.textContent = "Nome Salvato";
-        saveNameBtn.disabled = true;
+        saveNameBtn.style.display = 'none';
+        nameConfirmation.style.display = 'block';
         calendar.classList.remove("disabled");
-        alert("Nome salvato! Ora puoi selezionare i giorni.");
+        initCalendarListeners();
+        render(); // Aggiorna il calendario con i dati esistenti
       } else {
         alert("Per favore, inserisci un nome valido.");
       }
@@ -348,7 +377,8 @@
 
     async function render() {
       for (let d = 1; d <= daysInMonth; d++) {
-        let cell = grid.querySelectorAll(".cell")[d - 1];
+        let cell = grid.querySelector(`[data-day="${d}"]`);
+        if (!cell) continue;
         const ref = doc(db, room, `${year}-${month + 1}-${d}`);
         const snap = await getDoc(ref);
         if (snap.exists()) {
@@ -358,7 +388,7 @@
           badge.textContent = count > 0 ? count : "";
           cell.classList.remove("green", "yellow");
           if (count >= 7) cell.classList.add("green");
-          else if (count >= 6) cell.classList.add("yellow");
+          else if (count === 6) cell.classList.add("yellow");
         } else {
           cell.querySelector(".count").textContent = "";
           cell.classList.remove("green", "yellow");
@@ -366,9 +396,7 @@
       }
     }
 
-    // Carica i dati iniziali
     render();
-
   </script>
 </body>
 </html>
