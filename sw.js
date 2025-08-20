@@ -1,45 +1,22 @@
-// Service Worker per Calendario DnD
-const CACHE_NAME = 'dnd-cal-v11;
-const CORE_ASSETS = [
-  './',
-  './index.html',
-  './manifest.webmanifest',
-  './icon-192.png',
-  './icon-512.png'
-];
-
-self.addEventListener('install', (event) => {
-  event.waitUntil(
-    caches.open(CACHE_NAME).then(cache => cache.addAll(CORE_ASSETS))
-  );
+// sw.js — no-cache, auto-unregister
+self.addEventListener('install', (e) => {
   self.skipWaiting();
 });
 
-self.addEventListener('activate', (event) => {
-  event.waitUntil(
-    caches.keys().then(keys => Promise.all(
-      keys.map(k => (k !== CACHE_NAME) && caches.delete(k))
-    ))
-  );
-  self.clients.claim();
+self.addEventListener('activate', (e) => {
+  e.waitUntil((async () => {
+    // 1) cancella tutte le cache esistenti
+    const names = await caches.keys();
+    await Promise.all(names.map((n) => caches.delete(n)));
+
+    // 2) deregistra il service worker
+    await self.registration.unregister();
+
+    // 3) ricarica subito le pagine aperte
+    const clientsList = await self.clients.matchAll({ type: 'window', includeUncontrolled: true });
+    clientsList.forEach((c) => c.navigate(c.url));
+  })());
 });
 
-self.addEventListener('fetch', (event) => {
-  const req = event.request;
-  const url = new URL(req.url);
-
-  if (req.method !== 'GET' || url.origin !== location.origin) return;
-
-  event.respondWith(
-    caches.match(req).then(cached => {
-      if (cached) return cached;
-      return fetch(req).then(res => {
-        const copy = res.clone();
-        caches.open(CACHE_NAME).then(cache => cache.put(req, copy));
-        return res;
-      }).catch(() => {
-        if (req.mode === 'navigate') return caches.match('./index.html');
-      });
-    })
-  );
-});
+// 4) niente caching, tutto va diretto alla rete
+self.addEventListener('fetch', () => {});
