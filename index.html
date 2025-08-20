@@ -24,4 +24,275 @@
     .name-input input{flex:1}
     .okmsg{margin-top:.5rem;font-size:.85rem;color:#16a34a;display:none}
 
-    .calend
+    .calendar{width:100%}
+    .calendar.disabled{opacity:.5;pointer-events:none}
+
+    .weeknames,.grid{display:grid;grid-template-columns:repeat(7,1fr)}
+    .weeknames{font-weight:600;text-align:center;color:var(--muted);margin-bottom:4px}
+    .cell{border:1px solid var(--border);margin:2px;border-radius:.8rem;min-height:68px;padding:6px;font-size:.85rem;position:relative;background:#fff;display:flex;flex-direction:column;align-items:flex-start;justify-content:flex-start}
+    .cell.clickable{cursor:pointer}
+    .cell .daynum{font-weight:700}
+    .cell .count{font-size:.7rem;margin-top:auto;align-self:flex-end;background:#fff;border:1px solid var(--border);border-radius:999px;padding:2px 6px;line-height:1}
+    .cell.full7{background:var(--green)}
+    .cell.almost6{background:var(--yellow)}
+    @media (max-width:560px){ .cell{min-height:110px} }
+
+    /* Popup */
+    .popup{position:fixed;inset:0;background:rgba(0,0,0,.5);display:none;align-items:center;justify-content:center;z-index:100}
+    .popup .box{background:#fff;border-radius:1rem;padding:1rem;width:92%;max-width:420px}
+    .list{margin:.5rem 0;max-height:220px;overflow:auto;font-size:.95rem;border:1px solid var(--border);border-radius:.5rem;padding:.5rem;background:#f9fafb}
+    .list .row{padding:4px 6px;border-bottom:1px solid var(--border)}
+    .list .row:last-child{border-bottom:none}
+    .timebar{display:flex;gap:.5rem;align-items:center;flex-wrap:wrap}
+    .btns{display:flex;gap:.5rem;margin-top:1rem;flex-wrap:wrap}
+    .danger{background:var(--red)}
+  </style>
+</head>
+<body>
+  <h1>Calendario disponibilità D&D</h1>
+  <div id="monthYear" class="subtitle"></div>
+
+  <div class="card">
+    <label for="nome">Il tuo nome:</label>
+    <div class="name-input">
+      <input id="nome" placeholder="Scrivi il tuo nome">
+      <button id="saveNameBtn">Salva</button>
+    </div>
+    <div id="okName" class="okmsg">Nome salvato! Ora puoi toccare un giorno.</div>
+  </div>
+
+  <div class="card calendar disabled" id="calendar">
+    <div class="weeknames">
+      <div>Lun</div><div>Mar</div><div>Mer</div><div>Gio</div><div>Ven</div><div>Sab</div><div>Dom</div>
+    </div>
+    <div class="grid" id="grid"></div>
+  </div>
+
+  <!-- Popup giorno -->
+  <div class="popup" id="popup">
+    <div class="box">
+      <h3 id="popupTitle">Dettagli giorno</h3>
+      <div class="list" id="namesList"></div>
+      <div class="timebar">
+        <label>Dalle <input id="from" type="time"></label>
+        <label>Alle <input id="to" type="time"></label>
+      </div>
+      <div class="btns">
+        <button id="confirmBtn">Conferma</button>
+        <button id="removeBtn" class="danger">Cancella</button>
+        <button id="closeBtn" style="background:#6b7280">Chiudi</button>
+      </div>
+      <div id="popupError" style="color:#b91c1c;margin-top:.5rem;display:none"></div>
+    </div>
+  </div>
+
+  <script type="module">
+    // --- Firebase modular SDK ---
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.13.1/firebase-app.js";
+    import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.13.1/firebase-auth.js";
+    import {
+      getFirestore, doc, getDoc, setDoc, updateDoc, deleteField,
+      collection
+    } from "https://www.gstatic.com/firebasejs/10.13.1/firebase-firestore.js";
+
+    // CONFIG (uguale alla tua)
+    const firebaseConfig = {
+      apiKey: "AIzaSyCLe8BSPpF3j5MSoi_6lsXL6RFT8vUVFWk",
+      authDomain: "calendario-dnd.firebaseapp.com",
+      projectId: "calendario-dnd",
+    };
+
+    // Init
+    const app = initializeApp(firebaseConfig);
+    const auth = getAuth(app);
+    const db = getFirestore(app);
+
+    // UI refs
+    const nomeInput = document.getElementById("nome");
+    const saveNameBtn = document.getElementById("saveNameBtn");
+    const okName = document.getElementById("okName");
+
+    const calendar = document.getElementById("calendar");
+    const grid = document.getElementById("grid");
+    const monthYearDisplay = document.getElementById("monthYear");
+
+    const popup = document.getElementById("popup");
+    const popupTitle = document.getElementById("popupTitle");
+    const namesList = document.getElementById("namesList");
+    const fromInp = document.getElementById("from");
+    const toInp = document.getElementById("to");
+    const confirmBtn = document.getElementById("confirmBtn");
+    const removeBtn = document.getElementById("removeBtn");
+    const closeBtn = document.getElementById("closeBtn");
+    const popupError = document.getElementById("popupError");
+
+    // Stato
+    const room = "dnd"; // stanza fissa
+    let savedName = "";
+    let currentYMD = null;
+    let authed = false;
+
+    // Helpers
+    const pad2 = n => String(n).padStart(2,"0");
+    const ymd = (y,m,d) => `${y}-${pad2(m)}-${pad2(d)}`;
+
+    // Mese corrente
+    const today = new Date();
+    const year = today.getFullYear();
+    const month = today.getMonth()+1; // 1..12
+    const monthNames = ["Gennaio","Febbraio","Marzo","Aprile","Maggio","Giugno","Luglio","Agosto","Settembre","Ottobre","Novembre","Dicembre"];
+    monthYearDisplay.textContent = `${monthNames[month-1]} ${year}`;
+
+    // Calcola offset per settimane (settimana inizia lunedì)
+    const jsFirst = new Date(year, month-1, 1).getDay(); // 0=Dom .. 6=Sab
+    const startOffset = (jsFirst + 6) % 7;
+    const dim = new Date(year, month, 0).getDate();
+
+    // Popola griglia
+    function populateCalendar(){
+      grid.innerHTML = "";
+      for(let i=0;i<startOffset;i++){ const ghost=document.createElement("div"); grid.appendChild(ghost); }
+      for(let d=1; d<=dim; d++){
+        const cell = document.createElement("div");
+        cell.className = "cell";
+        cell.dataset.ymd = ymd(year, month, d);
+        cell.innerHTML = `<span class="daynum">${d}</span><div class="count"></div>`;
+        grid.appendChild(cell);
+      }
+    }
+    populateCalendar();
+
+    // Delegazione click celle
+    grid.addEventListener("click", async (e)=>{
+      const cell = e.target.closest(".cell");
+      if(!cell || !authed || !savedName) return;
+      await openDay(cell.dataset.ymd);
+    });
+
+    // Salvataggio nome
+    saveNameBtn.addEventListener("click", ()=>{
+      const n = nomeInput.value.trim();
+      if(!n){ alert("Inserisci un nome valido."); return; }
+      savedName = n;
+      nomeInput.disabled = true;
+      saveNameBtn.disabled = true;
+      okName.style.display = "block";
+      if(authed) calendar.classList.remove("disabled");
+      render(); // aggiorna contatori/colori
+    });
+
+    // Auth anonima (necessaria per le tue regole)
+    onAuthStateChanged(auth, (user)=>{
+      authed = !!user;
+      if(user){
+        if(savedName) calendar.classList.remove("disabled");
+      } else {
+        calendar.classList.add("disabled");
+      }
+    });
+    // Avvia login anonimo
+    signInAnonymously(auth).catch(err=>{
+      console.error("Auth error:", err);
+      alert("Errore di autenticazione anonima: " + err.message);
+    });
+
+    // Firestore refs (path conforme alle regole: rooms/{room}/days/{day})
+    const daysCol = collection(db, "rooms", room, "days");
+
+    async function openDay(ymdKey){
+      popupError.style.display = "none";
+      currentYMD = ymdKey;
+      const [y, m, d] = ymdKey.split("-");
+      popupTitle.textContent = `Dettagli giorno ${d} ${monthNames[Number(m)-1]} ${y}`;
+      fromInp.value = ""; toInp.value = "";
+      // Carica documento
+      const ref = doc(daysCol, ymdKey);
+      const snap = await getDoc(ref);
+      const data = snap.exists() ? snap.data() : {};
+      const availability = (data && data.availability) ? data.availability : {};
+
+      // Lista nomi+orari
+      const entries = Object.entries(availability).sort((a,b)=>a[0].localeCompare(b[0],'it'));
+      namesList.innerHTML = entries.length ? "" : "<div class='row'>Nessuna disponibilità registrata.</div>";
+      for(const [name, t] of entries){
+        const line = document.createElement("div");
+        const from = (t && t.from) ? t.from : "nd";
+        const to   = (t && t.to)   ? t.to   : "nd";
+        line.className = "row";
+        line.textContent = `${name} (${from}–${to})`;
+        namesList.appendChild(line);
+      }
+      // Precompila se io già presente
+      if(availability[savedName]){
+        fromInp.value = availability[savedName].from || "";
+        toInp.value   = availability[savedName].to   || "";
+      }
+      popup.style.display = "flex";
+    }
+
+    closeBtn.addEventListener("click", ()=> popup.style.display = "none");
+
+    confirmBtn.addEventListener("click", async ()=>{
+      if(!currentYMD || !savedName) return;
+      const f = fromInp.value || "00:00";
+      const t = toInp.value   || "23:59";
+      try{
+        const ref = doc(daysCol, currentYMD);
+        await setDoc(ref, {
+          date: currentYMD,
+          availability: { [savedName]: { from: f, to: t } }
+        }, { merge: true });
+        popup.style.display = "none";
+        await render();
+      }catch(err){
+        popupError.textContent = "Errore salvataggio: " + err.message;
+        popupError.style.display = "block";
+      }
+    });
+
+    removeBtn.addEventListener("click", async ()=>{
+      if(!currentYMD || !savedName) return;
+      try{
+        const ref = doc(daysCol, currentYMD);
+        await updateDoc(ref, { [`availability.${savedName}`]: deleteField() });
+        popup.style.display = "none";
+        await render();
+      }catch(err){
+        // se il doc non esiste ancora, ignora
+        if(err.code !== "not-found"){
+          popupError.textContent = "Errore cancellazione: " + err.message;
+          popupError.style.display = "block";
+        } else {
+          popup.style.display = "none";
+          await render();
+        }
+      }
+    });
+
+    async function render(){
+      // Aggiorna contatori e colori per tutti i giorni del mese
+      const cells = grid.querySelectorAll(".cell");
+      for(const cell of cells){
+        const key = cell.dataset.ymd;
+        const ref = doc(daysCol, key);
+        const snap = await getDoc(ref);
+        let count = 0;
+        if(snap.exists()){
+          const data = snap.data();
+          const availability = (data && data.availability) ? data.availability : {};
+          count = Object.keys(availability).length;
+        }
+        const badge = cell.querySelector(".count");
+        badge.textContent = count ? count : "";
+        cell.classList.remove("full7","almost6","clickable");
+        if(authed && savedName) cell.classList.add("clickable");
+        if(count >= 7) cell.classList.add("full7");
+        else if(count === 6) cell.classList.add("almost6");
+      }
+    }
+
+    // primo render (contatori vuoti finché non c’è auth+nome)
+    render();
+  </script>
+</body>
+</html>
