@@ -86,6 +86,38 @@
     .warn{color:#92400e;background:#fffbeb;border-color:#fcd34d}
     .err{color:#991b1b;background:#fee2e2;border-color:#fecaca}
     .muted{color:var(--muted);font-size:12px}
+    /* ===== FIX MOBILE CALENDAR ===== */
+
+/* Celle più alte su schermi piccoli */
+@media (max-width: 600px) {
+  .grid {
+    grid-template-columns: repeat(7, 1fr);
+    gap: 4px;
+  }
+
+  .cell {
+    min-height: 80px;          /* aumenta l’altezza della cella */
+    font-size: 12px;           /* testi più piccoli */
+    overflow-y: auto;          /* scroll verticale se ci sono tanti nomi */
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .cell .names {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    font-size: 11px;
+    line-height: 1.2;
+    word-break: break-word;
+  }
+
+  .cell .names span {
+    background: rgba(0,0,0,0.05);
+    border-radius: 4px;
+    padding: 1px 2px;
+    text-align: center;
+  }
+}
   </style>
 </head>
 <body>
